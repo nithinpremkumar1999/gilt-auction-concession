@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gilt-study"
+version = "0.1.0"
+description = "Gilt Auction Concession Study: pricing, curve and auction-panel code"
+requires-python = ">=3.11"
+authors = [{ name = "Nithin Premkumar" }]
+license = { text = "MIT" }
+# Exact versions are pinned in requirements.txt (they match the project .venv).
+dependencies = ["numpy", "pandas", "scipy", "python-dateutil", "holidays", "xlrd", "openpyxl",
+                "matplotlib", "seaborn", "plotly"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: re-runs a full exercise on the raw data (about a minute)"]

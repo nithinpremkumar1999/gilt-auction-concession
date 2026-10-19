@@ -1,0 +1,48 @@
+dataset,file,first,last,n,unit,note
+#1 BoE nominal spot curve,GLC Nominal daily data_1979 to 1984.xlsx,1979-01-02,1984-12-31,1517,curve days,max maturity 25y
+#1 BoE nominal spot curve,GLC Nominal daily data_1985 to 1989.xlsx,1985-01-02,1989-12-29,1264,curve days,max maturity 25y
+#1 BoE nominal spot curve,GLC Nominal daily data_1990 to 1994.xlsx,1990-01-02,1994-12-30,1265,curve days,max maturity 25y
+#1 BoE nominal spot curve,GLC Nominal daily data_1995 to 1999.xlsx,1995-01-03,1999-12-30,1264,curve days,max maturity 25y
+#1 BoE nominal spot curve,GLC Nominal daily data_2000 to 2004.xlsx,2000-01-04,2004-12-31,1264,curve days,max maturity 25y
+#1 BoE nominal spot curve,GLC Nominal daily data_2005 to 2015.xlsx,2005-01-04,2015-12-31,2779,curve days,max maturity 25y
+#1 BoE nominal spot curve,GLC Nominal daily data_2016 to 2024.xlsx,2016-01-04,2024-12-31,2273,curve days,max maturity 40y
+#1 BoE nominal spot curve,GLC Nominal daily data_2025 to present.xlsx,2025-01-02,2026-09-30,442,curve days,max maturity 40y
+#1 BoE nominal spot curve,GLC Nominal daily data current month.xlsx,2026-10-01,2026-10-15,11,curve days,max maturity 40y
+#7c BoE OIS spot curve,OIS daily data_2009 to 2015.xlsx,2009-01-02,2015-12-31,1768,curve days,max maturity 5y
+#7c BoE OIS spot curve,OIS daily data_2016 to 2024.xlsx,2016-01-04,2024-12-31,2272,curve days,max maturity 25y
+#7c BoE OIS spot curve,OIS daily data_2025 to present.xlsx,2025-01-02,2026-09-30,442,curve days,max maturity 25y
+#2 DMO reference prices,1998-gilt-reference-prices.xls,1998-01-02,1998-12-31,36214,gilt-days,157 instruments
+#2 DMO reference prices,1999-gilt-reference-prices.xls,1999-01-04,1999-12-30,35965,gilt-days,150 instruments
+#2 DMO reference prices,2000-gilt-reference-prices.xls,2000-01-04,2000-12-29,34838,gilt-days,149 instruments
+#2 DMO reference prices,2001-gilt-reference-prices.xls,2001-01-02,2001-12-31,34643,gilt-days,146 instruments
+#2 DMO reference prices,2002-gilt-reference-prices.xls,2002-01-02,2002-12-31,42148,gilt-days,194 instruments
+#2 DMO reference prices,2003-gilt-reference-prices.xls,2003-01-02,2003-12-31,47355,gilt-days,225 instruments
+#2 DMO reference prices,2004-gilt-reference-prices.xls,2004-01-02,2004-12-31,50216,gilt-days,231 instruments
+#2 DMO reference prices,2005-gilt-reference-prices.xls,2005-01-04,2005-12-30,50700,gilt-days,262 instruments
+#2 DMO reference prices,2006-gilt-reference-prices.xls,2006-01-03,2006-12-29,59134,gilt-days,270 instruments
+#2 DMO reference prices,2007-gilt-reference-prices.xls,2007-01-02,2007-12-31,58902,gilt-days,269 instruments
+#2 DMO reference prices,2008-gilt-reference-prices.xls,2008-01-02,2008-12-31,59138,gilt-days,286 instruments
+#2 DMO reference prices,2009-gilt-reference-prices.xls,2009-01-02,2009-12-31,61218,gilt-days,317 instruments
+#2 DMO reference prices,2010-gilt-reference-prices.xls,2010-01-04,2010-12-31,62260,gilt-days,302 instruments
+#2 DMO reference prices,2011-gilt-reference-prices.xls,2011-01-04,2011-12-30,61235,gilt-days,298 instruments
+#2 DMO reference prices,2012-gilt-reference-prices.xls,2012-01-03,2012-12-31,60499,gilt-days,296 instruments
+#2 DMO reference prices,2013-gilt-reference-prices.xls,2013-01-02,2013-12-31,60535,gilt-days,286 instruments
+#2 DMO reference prices,2014-gilt-reference-prices.xls,2014-01-02,2014-12-31,59926,gilt-days,285 instruments
+#2 DMO reference prices,2015-gilt-reference-prices.xls,2015-01-02,2015-12-31,57848,gilt-days,250 instruments
+#2 DMO reference prices,2016-gilt-reference-prices.xls,2016-01-04,2016-12-30,56365,gilt-days,231 instruments
+#2 DMO reference prices,2017-gilt-reference-prices.xls,2017-01-03,2017-07-21,31110,gilt-days,227 instruments
+#5 DMO auction results (D2.1A),auction_results.xls,1998-05-20,2026-10-14,1244,auctions,915 conventional
+#4 DMO issuance history (D2.1E),issuance_history.xls,1998-01-21,2026-10-15,2371,issue events,180 ISINs
+#4 DMO gilts in issue (D1A),gilts_issue.xls,2026-10-16,2026-10-16,105,gilts,snapshot as at 16 OCTOBER 2026
+#4 DMO redeemed gilts (D1C),redeemed.xls,1981-01-15,2026-07-22,237,redemptions,"no ISIN, no first issue date"
+#8 DMO syndications (D10A),syndication_results.xlsx,2005-09-22,2026-09-08,110,syndications,
+#8 DMO tenders (D2.1PROF9),tender_results.xls,2008-10-20,2026-10-13,94,tenders,
+#8 DMO other operations (D2.1PROF7),other_gilt_operations.xls,1998-04-03,2025-04-14,46,operations,gilt switch auctions; gilt conversion offers; reverse gilt auctions; gilt taps; gilt mini tenders - re-sale of existing gilts
+#9 BoE QT gilt sales,boe_qt_sales.xlsx,2022-11-01,2026-09-14,1499,bond lines,120 operation dates
+#10 BoE QE gilt purchases,boe_qe_purchases.XLSX,2009-03-11,2021-12-15,7680,bond lines,678 operation dates
+#11 BoE 2022 operations,finanical-stability-gilt-sales-time-series.XLSX,2022-11-29,2023-01-12,360,bond lines,12 operation dates
+#11 BoE 2022 operations,index-linked-gilt-purchase-results.XLSX,2022-10-11,2022-10-14,92,bond lines,4 operation dates
+#11 BoE 2022 operations,long-dated-uk-government-bond-purchase-time-series.XLSX,2022-09-28,2022-10-14,241,bond lines,13 operation dates
+#7a SONIA,IUDSOIA.xlsx,1997-01-02,2026-10-14,7526,days,
+#7b Bank Rate,IUDBEDR.xlsx,1997-01-02,2026-10-15,7527,days,
+#12 DMO turnover by maturity band,turnover_maturity_band.xlsx,2001-01-01,2026-06-30,102,quarters,2001Q1 to 2026Q2

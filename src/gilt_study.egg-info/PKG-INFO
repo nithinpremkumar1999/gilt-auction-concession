@@ -1,0 +1,19 @@
+Metadata-Version: 2.4
+Name: gilt-study
+Version: 0.1.0
+Summary: Gilt Auction Concession Study: pricing, curve and auction-panel code
+Author: Nithin Premkumar
+License: MIT
+Requires-Python: >=3.11
+License-File: LICENSE
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: scipy
+Requires-Dist: python-dateutil
+Requires-Dist: holidays
+Requires-Dist: xlrd
+Requires-Dist: openpyxl
+Requires-Dist: matplotlib
+Requires-Dist: seaborn
+Requires-Dist: plotly
+Dynamic: license-file
