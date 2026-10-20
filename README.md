@@ -11,13 +11,14 @@ The method, conventions and every decision are in the **build spec** (`claude/bu
 │   ├── pricing.py           cash_flows() (single source of truth), gilt_price(), yield_from_dirty(), UK calendar
 │   ├── curve.py             BoE curve panel (1998-2026), Curve (spline, flat-forward extrapolation), curve pricer
 │   ├── gilt_terms.py        first issue and first coupon dates per gilt (P3, P4), WI tranche dates (P2)
+│   ├── auctions.py          the auction panel (Stage 3): D2.1A + D2.1E + terms + curve, panel checks
 │   ├── data_io.py           DMO readers; test-scope filters (single-dated, linker spellings)
 │   ├── inventory.py         SHA-256 manifest of data/raw_data and its check
 │   ├── plotting.py          one chart, two outputs: seaborn PNG + Plotly HTML (decision #9)
 │   ├── paths.py             every file location
 │   ├── config.py            study parameters from logged decisions (sample start 1 Nov 1998, #7)
 │   └── exercises/           validation scripts: exercise_a (Stage 1), exercise_b + curve_checks (Stage 2)
-├── notebooks/               00 data inventory · 01 pricer test · 02 curve panel (the why, before code)
+├── notebooks/               00 inventory · 01 pricer test · 02 curve panel · 03 auction panel (the why, before code)
 ├── reports/
 │   ├── figures/             static charts (seaborn), PNG
 │   └── interactive/         interactive charts (Plotly), HTML
@@ -27,7 +28,7 @@ The method, conventions and every decision are in the **build spec** (`claude/bu
 │   ├── interim_data/        regenerable intermediate data (gilt_terms.csv)
 │   ├── processed_data/      analysis-ready data and validation outputs
 │   └── DATA.md              log of every change to interim/processed data
-├── tests/                   pytest: Stage 0 checks, gilt terms, Stage 1 and Stage 2 regression tests
+├── tests/                   pytest: Stage 0 checks, gilt terms, Stages 1-3
 ├── SOURCES.md               every raw file: URL, download date, observed coverage, SHA-256, known issues
 ├── requirements.txt         pinned versions (match the project .venv)
 └── pyproject.toml           makes src/gilt_study installable
@@ -50,6 +51,7 @@ python -m gilt_study.exercises.exercise_a          # Stage 1 pricer test as sign
 python -m gilt_study.exercises.exercise_a --as-run # the Stage 1 record as first run
 python -m gilt_study.exercises.exercise_b          # Stage 2 curve acceptance test, 15 Mar 2016
 python -m gilt_study.exercises.curve_checks        # Stage 2 extrapolation checks (~2 min)
+python -m gilt_study.auctions                      # Stage 3 auction panel + panel checks (~20 s)
 ```
 
 Notebooks import the installed package (`from gilt_study import ...`), so they work from any folder.
@@ -167,7 +169,7 @@ Notebooks import the installed package (`from gilt_study import ...`), so they w
 - Final mode: ≥ 99.5%, 135,067 pass, every exception a DMO data error.
 - As-run record: still 138,685 of 167,608 pass, nothing unexplained.
 
-### Stage 2: curve panel and curve pricer, spec §5 (19 Oct 2026). Gate: curve acceptance test
+### Stage 2: curve panel and curve pricer, spec §5 (19 Oct 2026). Signed off 20 Oct 2026
 
 **Delivered**
 - `curve.py` rewritten (`pricing.py` untouched):
@@ -203,7 +205,9 @@ So flat forward is the better of the two, but long pre-2016 auctions carry a bia
 - the Good Friday 2016 fallback is flagged; panel rows equal the raw workbook;
 - the acceptance test (slow).
 
-**Could not resolve (needs decisions at the gate)**
+**Sign-off (20 Oct 2026; decisions #11–12).** The mean target was restated as **2.70 bp for the 36 gilts within the 40y curve**; the three named targets stand and flat forward stays. **Result: pass** (`exercise_b.TARGET_MEAN_ABS_BP_WITHIN_CURVE`). The auction panel records **years beyond the curve** (`curve.years_beyond_curve()`); robustness drops auctions more than **5 years** beyond (`config.MAX_YEARS_BEYOND_CURVE`).
+
+**Could not resolve at the gate** (items 1–3 resolved on 20 Oct: decisions #11–12 and the corrected #6; item 4 carried to Stage 3)
 1. The acceptance test's mean target (2.6 bp) was set under flat z. With flat forward the mean is 2.84 bp. Options: accept on the three targets, the count and the flat-z mean; restate the target "within the curve" (2.70 bp); or revisit decision #5.
 2. The extrapolation flag is binary (spec). Should the auction panel also record *years beyond the curve*, so robustness checks can use a threshold? This changes nothing by default.
 3. Spec decision log: #6 quotes 99.9955%, but the as-applied figure is 99.9800% (see Stage 1b). Decisions #8–#10 (repo layout, chart pair, WI discounting in the curve pricer) were added to the log from the chat.
@@ -211,3 +215,52 @@ So flat forward is the better of the two, but long pre-2016 auctions carry a bia
    - OIS control C start: the data has the long end from Jan 2016; the spec says Dec 2021.
    - Amount offered and uncovered auctions: D2.1A has no offered amount (Stage 3).
    - The PM's benchmark (spec §1).
+
+### Stage 3: auction panel, spec §6 (20 Oct 2026). Gate: panel checks
+
+**Delivered**
+- `auctions.py` builds `build_panel()`, which writes `data/processed_data/auctions/auction_panel.csv`: **912 conventional auctions**, 26 May 1999 – 29 Sep 2026, 69 columns. Its inputs:
+  - **D2.1A**: amounts, cover, AAP, AAY, tail. Linkers are excluded case-insensitively.
+  - **D2.1E**: ISIN and **settlement date = the DMO issue date** (spec §4). The match is the first priced row within 5 days with the same coupon, maturity year and total nominal.
+  - **gilt_terms**: maturity, first issue, first coupon and its source.
+  - **The Stage 2 curve**: T-1 curve, years beyond the curve, robustness drop flag.
+- It also computes the remaining spec §6 fields:
+  - new issue / reopening;
+  - nominal offered = allotted;
+  - PAOF take-up;
+  - yield at the lowest accepted price (AAY + tail);
+  - years to maturity and bucket (short < 7, medium 7–15, long > 15);
+  - DV01 per £100 and £ per bp, for the allotment and for the total incl. PAOF;
+  - regime;
+  - supply controls (syndications, tenders, QT sale days, all ±5 business days);
+  - two rate-volatility candidates.
+- `panel_checks()` runs the spec §6 checks plus an AAP repricing check. The DMO reference counts and result-notice figures are in SOURCES.md #5b.
+- `notebooks/03_auction_panel.ipynb`. Charts: `auction_counts_by_fy`, `auction_years_beyond_curve`, `auction_dv01_over_time`.
+- Stage 2 sign-off applied: restated acceptance target (decision #11) and `years_beyond_curve` (#12). Notebook 02 §6 records the decisions.
+
+**Panel checks: all pass**
+
+| Check (spec §6) | Result |
+|---|---|
+| Counts by financial year reconcile to the DMO | **26 of 26** financial years (1998-99 to 2023-24) match the DMO's total auction count; **5 of 5** spot-check years match by bucket (2009-10, 2016-17, 2017-18, 2020-21, 2023-24) |
+| No duplicate (date, ISIN) | 0 duplicates |
+| Every ISIN matched to terms | 912 of 912 (each auction has exactly one candidate ISIN) |
+| Linkers excluded and counted | 328 linker auctions in the window excluded; 5 spelled "Index-Linked" would slip past a case-sensitive filter |
+| *Extra:* the DMO's AAY reprices to its AAP (our terms, DMO settlement) | **912 of 912**. From 29 Jul 2003 within 2e-5. Before then the published AAP was truncated (all 32 errors in [0, 0.01)). The 89 auctions priced with a rule-based first coupon all reprice within 1e-5, which confirms the rule's dates |
+| *Extra:* DMO result notices | 25 Mar 2009 (uncovered; full amount allotted) and 10 Aug 2010 match field by field |
+
+**Other facts from the panel**
+- Every DMO settlement date is T+1.
+- 80 new issues and 832 reopenings.
+- 101 auctions are priced partly beyond the curve (88 before 2016); 75 are more than 5 years beyond.
+- Regimes: pre-crisis 129, QE 546, Feb–Oct 2022 (open) 24, LDI stress 3, active QT 208, post-QT-decision 2.
+
+**Tests run:** `pytest`, 69 passed. New: `test_auctions.py` (26 tests): calendar helpers, bucket and regime boundaries, the four spec checks, settlement, AAP repricing, two result notices, years beyond the curve, new-issue and first-coupon flags, the supply window, the negative-tail flag.
+
+**Could not resolve (needs decisions at the gate)**
+1. **Rate volatility** is not defined in spec §6. The panel has two candidates: the 20-day realised volatility of the BoE spot rate to T-1, at 10y and at the gilt's own maturity (correlation 0.90).
+2. **Auction DV01 nominal:** the allotment (known before the auction), or the total including the PAOF (partly an outcome)? Both are recorded.
+3. **Feb–Oct 2022** (24 auctions outside the LDI window): regime treatment is open (spec §8). They are labelled `Feb-Oct 2022 (open)`.
+4. **4 Mar 2009, 4¼% 2039: D2.1A tail −5.5 bp** (impossible; data issue). Kept and flagged. Keep it, set it to missing, or drop the auction from tail regressions?
+5. **Supply controls:** should syndications and tenders include linker operations? Both versions are recorded. Should QE purchases be added (data #10, not in spec §6)?
+6. Still open: the M2 control (Module 4, today), the PM's benchmark (§1), and the OIS control C start date.

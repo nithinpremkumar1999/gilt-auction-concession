@@ -152,6 +152,25 @@ Known issues:
 - **912 conventional auctions** fall in the study window (1 Nov 1998 to 30 Sep 2026). Two are before Nov 1998 (May and Jul 1998) and one is in October 2026. The first auction in the window is 26 May 1999.
 - D2.1A note 4: yields before Nov 1998 are given to 2 d.p. only, and tails are whole numbers.
 - PAOF (post-auction option) exists only from 1 June 2009.
+- **Before Jul 2003 the AAP is truncated, not rounded**, to 2 d.p. The yield at the AAP was computed from the unrounded AAP. All 32 auctions up to 2 Jul 2003 reprice with a non-negative error below 0.01. From 29 Jul 2003, the AAY reprices to the AAP within 2e-5 (Stage 3, notebook 03).
+- **4 Mar 2009, 4¼% 2039: tail −5.5 bp.** This is impossible in a multiple-price auction, and the AAY is given to 3 d.p. only (4.485%). Kept as published; flagged in the auction panel (`flag_tail_negative`).
+- In 1999–2002, D2.1E shows £20–50m more than D2.1A on 7 auctions. This is consistent with D2.1A note 2 (CRND purchases at the AAP do not count as financing). The panel uses D2.1A's amounts.
+- D2.1A has no "amount offered" column. Auction result notices show the DMO allots the full amount on offer, including at the one uncovered auction (25 Mar 2009). So amount offered = nominal issued via auction.
+
+## #5b DMO published auction counts and result notices (checks only)
+
+- Publisher: UK Debt Management Office (Gilt Market Annual Reviews, remit, auction result notices)
+- Read on: 2026-10-20 (web pages, not downloaded; the figures are stored in `gilt_study.auctions.DMO_ALL_AUCTIONS` and `DMO_BUCKET_COUNTS`)
+- Used for: the Stage 3 panel check that auction counts by financial year reconcile to the DMO (spec §6)
+- [Gilt Market Annual Review 2023-24](https://dmo.gov.uk/media/5rqb2scf/gar2024_final.pdf), Table 9: all outright auctions per financial year, 1998-99 to 2023-24. The 1998-99 figure (4) was read from the table layout, so it is marked uncertain. Table 6: 2023-24 by bucket (20 / 20 / 15, 14 index-linked)
+- [Annual Review 2020-21](https://dmo.gov.uk/media/17809/gar2021.pdf), Table 4: 46 / 39 / 46, 19 index-linked
+- [Annual Review 2017-18](https://www.dmo.gov.uk/media/15622/gar1718.pdf), p.18: 10 / 9 / 10, 11 index-linked
+- [Annual Review 2016-17](https://www.dmo.gov.uk/media/vu5k3dub/gar1617.pdf), p.18: 13 / 11 / 12, 12 index-linked
+- [Annual Review 2009-10](https://www.dmo.gov.uk/media/14488/gar0910.pdf), p.16: remit plan 15 / 19 / 12, 12 index-linked. No auctions were added; the outturn total of 58 equals the plan
+- [Remit 2009-10](https://dmo.gov.uk:443/media/2077/remit0910.pdf), ¶5.5: bands "short (1-7 years)", "medium (7-15 years)", "long (15 years and over)"
+- Result notices: [25 Mar 2009, 4¼% 2049](https://www.dmo.gov.uk/media/hydpnuaa/250309conventional.pdf) (uncovered: offered £1,750m, bids £1,627m, allotted £1,750m) and [10 Aug 2010, 4½% 2034](https://www.dmo.gov.uk/media/q1lmbcie/100810conventional.pdf). Both match the panel field by field (`tests/test_auctions.py`)
+
+Known issues: the Annual Reviews give bucket splits only for their own year. Five years are spot-checked against them.
 
 ## #7 SONIA, Bank Rate, OIS curve, daily
 
@@ -210,14 +229,15 @@ Known issues:
 Known issues:
 - The earlier entries gave `.xlsx` for tenders and other operations; both files are `.xls`.
 - Syndications and tenders include index-linked operations (filter case-insensitively, as for D2.1A).
-- Other operations ends on 14 Apr 2025 and is sparse (46 operations over 27 years).
+- Other operations ends on 14 Apr 2025 and is sparse (46 operations over 27 years). Only two supply operations fall near a sample auction: the 6% 2028 tap of 6 Aug 1999, and the 4¼% 2049 mini-tender re-sale of 29 Apr 2009. The panel counts them separately from syndications and tenders.
+- Syndication dates are text ("08 Sep 2026"); tender and other-operations dates are Excel dates.
 
 ## #9 BoE quantitative tightening (QT) sales
 
 - Publisher: Bank of England, Asset Purchase Facility
 - Source: [gilt-sales-time-series.xlsx](https://www.bankofengland.co.uk/-/media/boe/files/markets/asset-purchase-facility/gilt-sales-time-series.xlsx)
 - Downloaded on: 2026-10-17
-- Used for: the "QT sale that week" variable, matched to the same maturity sector as each auction
+- Used for: the QT-sale supply control. The auction panel records operation days and nominal sold within ±5 business days, plus the nominal sold in the auction's own DMO bucket (each sold gilt's residual maturity on the operation date). Maturity is read from the bond code (`UKT_0.125_300126` → 30 Jan 2026)
 - Contains: header on row 1; one row per bond per operation (operation date, settlement date, ISIN, bond, offers, allocation in proceeds and nominal, accepted yield and prices, tail)
 - Location: **data/raw_data/boe_qt_sales.xlsx**
 

@@ -4,7 +4,7 @@ The project root is found from this file's location (src/gilt_study/paths.py -> 
 which works for an editable install (`pip install -e .`). Set the environment variable
 GILT_STUDY_ROOT to override it.
 
-Folder rules (decision #6):
+Folder rules (decision #8):
   data/raw_data        untouched downloads; never written by code
   data/interim_data    intermediate outputs, regenerable from raw_data
   data/processed_data  analysis-ready panels and validation outputs

@@ -76,11 +76,18 @@ def test_model_yield_reprices_the_curve_price():
     assert abs(gilt_price(settle, mat, 4.25, y)["dirty"] - d) < 1e-9
 
 
-def test_beyond_curve_flag():
+def test_beyond_curve_flag_and_years():
+    """Flag and years beyond the curve (decision #12), measured from the effective settlement."""
     c = toy_curve()
     settle = dt.date(2010, 1, 5)
     assert not curve.beyond_curve(settle, dt.date(2034, 12, 7), c)      # 24.9y
+    assert curve.years_beyond_curve(settle, dt.date(2034, 12, 7), c) == 0.0
     assert curve.beyond_curve(settle, dt.date(2035, 3, 7), c)           # 25.2y
+    mat = dt.date(2045, 3, 7)
+    assert abs(curve.years_beyond_curve(settle, mat, c) - ((mat - settle).days / 365.25 - 25)) < 1e-12
+    # a when-issued new gilt: measured from its first issue date
+    fi = dt.date(2010, 2, 3)
+    assert curve.years_beyond_curve(settle, mat, c, fi) == (mat - fi).days / 365.25 - 25
 
 
 # ---------------------------------------------------------------- the panel
@@ -124,16 +131,18 @@ def test_panel_rows_match_the_raw_workbook(panel):
 # ---------------------------------------------------------------- acceptance test (spec §5)
 @pytest.mark.slow
 def test_curve_acceptance_15_mar_2016(capsys, panel):
-    """Three Module 2 targets within 0.05bp, 39 gilts. The 2.6bp mean target is met with flat z
-    (Module 2: 2.64); with the study's flat forward the 3 gilts beyond 40y move (reported at the
-    Stage 2 gate, decision pending), so the mean is checked within the curve and for flat z."""
+    """Spec §5 as restated (decision #11): the three Module 2 targets within 0.05bp, 39 gilts, mean
+    |residual| 2.70bp for the 36 gilts within the 40y curve. The all-gilt flat-z mean still
+    reproduces Module 2 (2.64bp); flat forward moves only the 3 gilts beyond 40y."""
     R = exercise_b.residuals(exercise_b.DATE, panel)
     capsys.readouterr()
     assert len(R) == exercise_b.TARGET_COUNT
     got = R.set_index("gilt")["residual_bp"]
     for name, target in exercise_b.TARGETS_BP.items():
         assert abs(got[name] - target) < 0.05, name
-    assert abs(R["residual_bp_flat_z"].abs().mean() - 2.64) < 0.01
-    assert R["beyond_curve"].sum() == 3
     inside = R[~R["beyond_curve"]]
+    assert len(inside) == 36
+    assert abs(inside["residual_bp"].abs().mean() - exercise_b.TARGET_MEAN_ABS_BP_WITHIN_CURVE) < 0.005
+    assert abs(R["residual_bp_flat_z"].abs().mean() - exercise_b.MODULE2_MEAN_ABS_BP_FLAT_Z) < 0.01
+    assert R["beyond_curve"].sum() == 3
     assert (inside["residual_bp"] == inside["residual_bp_flat_z"]).all()

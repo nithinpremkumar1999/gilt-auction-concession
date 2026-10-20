@@ -1,4 +1,4 @@
-"""One chart, two outputs (decision #8): a seaborn PNG for notebooks and a Plotly HTML for the webpage.
+"""One chart, two outputs (decision #9): a seaborn PNG for notebooks and a Plotly HTML for the webpage.
 
 Both libraries draw from the same tidy DataFrame and share one visual system, so the static and
 interactive versions of a chart look alike:
