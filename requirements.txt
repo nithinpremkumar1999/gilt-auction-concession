@@ -1,3 +1,6 @@
+# Python 3.11. Versions match the project .venv on 19 Oct 2026; results (holiday calendar,
+# Excel parsing) depend on them, so change a pin only with a note in the README.
+#   pip install -r requirements.txt
 numpy==2.4.6
 pandas==3.0.6
 scipy==1.17.1
@@ -6,8 +9,8 @@ holidays==0.106          # UK calendar incl. one-off closures; checked 1999-2023
 xlrd==2.0.2              # DMO .xls files
 openpyxl==3.1.5          # BoE .xlsx workbooks
 matplotlib==3.11.2
-seaborn==0.13.2          # static charts (decision #8)
-plotly==7.1.0            # interactive charts (decision #8)
+seaborn==0.13.2          # static charts (decision #9)
+plotly==7.1.0            # interactive charts (decision #9)
 ipykernel==7.4.0         # notebooks
 pytest==9.1.1
 -e .                     # installs src/gilt_study (editable)

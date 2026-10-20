@@ -39,7 +39,7 @@ def test_raw_files_cover_study_window():
     """Reference prices exist for every year from the study start to 2017; curve workbooks too."""
     for year in range(config.STUDY_START.year, 2018):
         assert paths.ref_prices_file(year).exists(), year
-    for label in ["2000 to 2004", "2005 to 2015", "2016 to 2024", "2025 to present"]:
+    for label in ["1995 to 1999", "2000 to 2004", "2005 to 2015", "2016 to 2024", "2025 to present"]:
         assert paths.curve_workbook(label).exists(), label
 
 

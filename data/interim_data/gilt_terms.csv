@@ -1,0 +1,133 @@
+isin,name,coupon,maturity,maturity_source,first_issue,first_issue_source,first_coupon,first_coupon_source,days_issue_to_quasi,rule_first_coupon,dmo_obs_days,dmo_obs_decisive_days,dmo_obs_short_fits,dmo_obs_long_fits,dmo_notice_url,first_coupon_type,flag_first_coupon_rule,flag_first_coupon_manual_check
+GB0000727205,8% Treasury Stock 2003,8.0,2003-06-10,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB0008986258,10% Treasury Stock 2003,10.0,2003-09-08,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB0001633014,6½% Treasury Stock 2003,6.5,2003-12-07,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB0006686579,5% Treasury Stock 2004,5.0,2004-06-07,D1C (coupon + year),1999-06-23,D2.1E launch row,1999-12-07,DMO reference prices (accrued interest),167.0,1999-12-07,245.0,123.0,True,False,,short,False,False
+GB0008889619,6¾% Treasury Stock 2004,6.75,2004-11-26,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB0008987777,9½% Conversion Stock 2005,9.5,2005-04-18,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB0008880808,8½% Treasury Stock 2005,8.5,2005-12-07,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB0008916024,7¾% Treasury Stock 2006,7.75,2006-09-08,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB0009998302,7½% Treasury Stock 2006,7.5,2006-12-07,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB0034040740,4½% Treasury Stock 2007,4.5,2007-03-07,D1C (coupon + year),2004-02-13,D2.1E launch row,2004-09-07,DMO reference prices (accrued interest),23.0,2004-09-07,149.0,126.0,False,True,,long,False,False
+GB0009126557,8½% Treasury Loan 2007,8.5,2007-07-16,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB0009997114,7¼% Treasury Stock 2007,7.25,2007-12-07,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB0031734154,5% Treasury Stock 2008,5.0,2008-03-07,D1C (coupon + year),2002-06-26,D2.1E launch row,2002-09-07,DMO reference prices (accrued interest),73.0,2002-09-07,183.0,126.0,True,False,,short,False,False
+GB0032785924,4% Treasury Stock 2009,4.0,2009-03-07,D1C (coupon + year),2003-05-14,D2.1E launch row,2003-09-07,DMO reference prices (accrued interest),116.0,2003-09-07,213.0,127.0,True,False,,short,False,False
+GB0003042636,5¾% Treasury Stock 2009,5.75,2009-12-07,D1C (coupon + year),1998-07-30,D2.1E launch row,1998-12-07,DMO reference prices (accrued interest),130.0,1998-12-07,148.0,123.0,True,False,,short,False,False
+GB00B0330274,4¾% Treasury Stock 2010,4.75,2010-06-07,D1C (coupon + year),2004-11-19,D2.1E launch row,2005-06-07,DMO reference prices (accrued interest),18.0,2005-06-07,142.0,123.0,False,True,,long,False,False
+GB0008890161,6¼% Treasury Stock 2010,6.25,2010-11-25,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB00B0LNX641,4¼% Treasury Gilt 2011,4.25,2011-03-07,D1C (coupon + year),2005-11-09,D2.1E launch row,2006-03-07,DMO reference prices (accrued interest),118.0,2006-03-07,213.0,127.0,True,False,,short,False,False
+GB0002215225,9% Conversion Loan 2011,9.0,2011-07-12,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB00B3F2K012,3¼% Treasury Gilt 2011,3.25,2011-12-07,D1C (coupon + year),2008-11-14,D2.1E launch row,2009-06-07,DMO reference prices (accrued interest),23.0,2009-06-07,146.0,123.0,False,True,,long,False,False
+GB0030468747,5% Treasury Stock 2012,5.0,2012-03-07,D1C (coupon + year),2001-05-25,D2.1E launch row,2001-09-07,DMO reference prices (accrued interest),105.0,2001-09-07,205.0,126.0,True,False,,short,False,False
+GB00B1L6WG32,5¼% Treasury Gilt 2012,5.25,2012-06-07,D1C (coupon + year),2007-03-16,D2.1E launch row,2007-06-07,DMO reference prices (accrued interest),83.0,2007-06-07,192.0,130.0,True,False,,short,False,False
+GB00B29WRG55,4½% Treasury Gilt 2013,4.5,2013-03-07,D1C (coupon + year),2008-03-05,D2.1E launch row,2008-09-07,DMO reference prices (accrued interest),2.0,2008-09-07,133.0,127.0,False,True,,long,False,False
+GB0008921883,8% Treasury Stock 2013,8.0,2013-09-27,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB00B3KJDW09,2¼% Treasury Gilt 2014,2.25,2014-03-07,D1C (coupon + year),2009-03-20,D2.1E launch row,2009-09-07,DMO reference prices (accrued interest),171.0,2009-09-07,250.0,127.0,True,False,,short,False,False
+GB0031829509,5% Treasury Stock 2014,5.0,2014-09-07,D1C (coupon + year),2002-07-25,D2.1E launch row,2002-09-07,DMO reference prices (accrued interest),44.0,2003-03-07,162.0,126.0,True,False,,short,False,False
+GB00B4LFZR36,2¾% Treasury Gilt 2015,2.75,2015-01-22,D1C (coupon + year),2009-11-04,D2.1E launch row,2010-01-22,DMO reference prices (accrued interest),79.0,2010-01-22,184.0,125.0,True,False,,short,False,False
+GB0033280339,4¾% Treasury Stock 2015,4.75,2015-09-07,D1C (coupon + year),2003-09-26,D2.1E launch row,2004-03-07,DMO reference prices (accrued interest),163.0,2004-03-07,246.0,126.0,True,False,,short,False,False
+GB0008881541,8% Treasury Stock 2015,8.0,2015-12-07,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB00B3QCG246,2% Treasury Gilt 2016,2.0,2016-01-22,D1C (coupon + year),2010-11-03,D2.1E launch row,2011-01-22,DMO reference prices (accrued interest),80.0,2011-01-22,184.0,124.0,True,False,,short,False,False
+GB00B0V3WX43,4% Treasury Gilt 2016,4.0,2016-09-07,D1C (coupon + year),2006-03-02,D2.1E launch row,2006-09-07,DMO reference prices (accrued interest),5.0,2006-09-07,136.0,130.0,False,True,,long,False,False
+GB00B3Z3K594,1¾% Treasury Gilt 2017,1.75,2017-01-22,D1C (coupon + year),2011-08-19,D2.1E launch row,2012-01-22,DMO reference prices (accrued interest),156.0,2012-01-22,239.0,125.0,True,False,,short,False,False
+GB0008931148,8¾% Treasury Stock 2017,8.75,2017-08-25,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB00B7F9S958,1% Treasury Gilt 2017,1.0,2017-09-07,D1C (coupon + year),2012-03-08,D2.1E launch row,2012-09-07,DMO reference prices (accrued interest),183.0,2012-09-07,257.0,126.0,True,False,,short,False,False
+GB00B1VWPC84,5% Treasury Gilt 2018,5.0,2018-03-07,D1C (coupon + year),2007-05-25,D2.1E launch row,2007-09-07,DMO reference prices (accrued interest),105.0,2007-09-07,207.0,127.0,True,False,,short,False,False
+GB00B8KP6M44,1¼% Treasury Gilt 2018,1.25,2018-07-22,D1C (coupon + year),2013-02-15,D2.1E launch row,2013-07-22,DMO reference prices (accrued interest),157.0,2013-07-22,242.0,128.0,True,False,,short,False,False
+GB00B39R3F84,4½% Treasury Gilt 2019,4.5,2019-03-07,D1C (coupon + year),2008-09-26,D2.1E launch row,2009-03-07,DMO reference prices (accrued interest),162.0,2009-03-07,245.0,125.0,True,False,,short,False,False
+GB00BDV0F150,1¾% Treasury Gilt 2019,1.75,2019-07-22,D1C (coupon + year),2013-11-22,D2.1E launch row,2014-01-22,DMO reference prices (accrued interest),61.0,2014-01-22,172.0,125.0,True,False,,short,False,False
+GB00B4YRFP41,3¾% Treasury Gilt 2019,3.75,2019-09-07,D1C (coupon + year),2009-07-08,D2.1E launch row,2009-09-07,DMO reference prices (accrued interest),61.0,2009-09-07,174.0,127.0,True,False,,short,False,False
+GB00B058DQ55,4¾% Treasury Stock 2020,4.75,2020-03-07,D1C (coupon + year),2005-03-29,D2.1E launch row,2005-09-07,DMO reference prices (accrued interest),162.0,2005-09-07,246.0,126.0,True,False,,short,False,False
+GB00BN65R198,2% Treasury Gilt 2020,2.0,2020-07-22,D1C (coupon + year),2014-09-03,D2.1E launch row,2015-01-22,DMO reference prices (accrued interest),141.0,2015-01-22,228.0,125.0,True,False,,short,False,False
+GB00B582JV65,3¾% Treasury Gilt 2020,3.75,2020-09-07,D1C (coupon + year),2010-06-10,D2.1E launch row,2010-09-07,DMO reference prices (accrued interest),89.0,2010-09-07,194.0,126.0,True,False,,short,False,False
+GB00BYY5F581,1½% Treasury Gilt 2021,1.5,2021-01-22,D1C (coupon + year),2015-09-03,D2.1E launch row,2016-01-22,DMO reference prices (accrued interest),141.0,2016-01-22,229.0,126.0,True,False,,short,False,False
+GB0009997999,8% Treasury Stock 2021,8.0,2021-06-07,D1C (coupon + year),,none: launched before D2.1E starts,,not needed: launched before D2.1E (first coupon long past),,,,,,,,,False,False
+GB00B4RMG977,3¾% Treasury Gilt 2021,3.75,2021-09-07,D1C (coupon + year),2011-03-18,D2.1E launch row,2011-09-07,DMO reference prices (accrued interest),173.0,2011-09-07,251.0,127.0,True,False,,short,False,False
+GB00B3KJDQ49,4% Treasury Gilt 2022,4.0,2022-03-07,D1C (coupon + year),2009-02-27,D2.1E launch row,2009-09-07,DMO reference prices (accrued interest),8.0,2009-09-07,138.0,132.0,False,True,,long,False,False
+GB00BD0PCK97,0½% Treasury Gilt 2022,0.5,2022-07-22,D1C (coupon + year),2016-08-03,D2.1E launch row,2017-01-22,DMO reference prices (accrued interest),172.0,2017-01-22,250.0,126.0,True,False,,short,False,False
+GB00B7L9SL19,1¾% Treasury Gilt 2022,1.75,2022-09-07,D1C (coupon + year),2012-06-22,D2.1E launch row,2012-09-07,DMO reference prices (accrued interest),77.0,2012-09-07,187.0,126.0,True,False,,short,False,False
+GB00BL68HG94,0 1/8% Treasury Gilt 2023,0.125,2023-01-31,D1C (coupon + year),2020-04-08,D2.1E launch row,2020-07-31,rule: issued >= 61 days before next quasi date -> short,114.0,2020-07-31,,,,,,short,True,False
+GB00BF0HZ991,0¾% Treasury Gilt 2023,0.75,2023-07-22,D1C (coupon + year),2017-07-20,D2.1E launch row,2018-01-22,DMO reference prices (accrued interest),2.0,2018-01-22,9.0,9.0,False,True,,long,False,False
+GB00B7Z53659,2¼% Treasury Gilt 2023,2.25,2023-09-07,D1C (coupon + year),2013-06-12,D2.1E launch row,2013-09-07,DMO reference prices (accrued interest),87.0,2013-09-07,193.0,126.0,True,False,,short,False,False
+GB00BMGR2791,0 1/8% Treasury Gilt 2024,0.125,2024-01-31,D1C (coupon + year),2020-10-07,D2.1E launch row,2021-01-31,rule: issued >= 61 days before next quasi date -> short,116.0,2021-01-31,,,,,,short,True,False
+GB00BFWFPL34,1% Treasury Gilt 2024,1.0,2024-04-22,D1C (coupon + year),2018-07-25,D2.1E launch row,2018-10-22,rule: issued >= 61 days before next quasi date -> short,89.0,2018-10-22,,,,,,short,True,False
+GB00BHBFH458,2¾% Treasury Gilt 2024,2.75,2024-09-07,D1C (coupon + year),2014-03-12,D2.1E launch row,2014-09-07,DMO reference prices (accrued interest),179.0,2014-09-07,255.0,127.0,True,False,,short,False,False
+GB00BLPK7110,0¼% Treasury Gilt 2025,0.25,2025-01-31,D1C (coupon + year),2021-07-02,D2.1E launch row,2022-01-31,DMO notice (issuance/pre-auction notice or prospectus),29.0,2022-01-31,,,,,https://www.dmo.gov.uk/media/jarfujjl/pr240621.pdf,long,False,False
+GB0030880693,5% Treasury Stock 2025,5.0,2025-03-07,D1C (coupon + year),2001-09-27,D2.1E launch row,2002-03-07,DMO reference prices (accrued interest),161.0,2002-03-07,244.0,126.0,True,False,,short,False,False
+GB00BK5CVX03,0 5/8% Treasury Gilt 2025,0.625,2025-06-07,D1C (coupon + year),2019-07-03,D2.1E launch row,2019-12-07,rule: issued >= 61 days before next quasi date -> short,157.0,2019-12-07,,,,,,short,True,False
+GB00BTHH2R79,2% Treasury Gilt 2025,2.0,2025-09-07,D1C (coupon + year),2015-03-20,D2.1E launch row,2015-09-07,DMO reference prices (accrued interest),171.0,2015-09-07,250.0,127.0,True,False,,short,False,False
+GB00BPCJD880,3½% Treasury Gilt 2025,3.5,2025-10-22,D1C (coupon + year),2023-01-18,D2.1E launch row,2023-04-22,rule: issued >= 61 days before next quasi date -> short,94.0,2023-04-22,,,,,,short,True,False
+GB00BL68HJ26,0 1/8% Treasury Gilt 2026,0.125,2026-01-30,D1C (coupon + year),2020-06-03,D2.1E launch row,2021-01-30,DMO notice (issuance/pre-auction notice or prospectus),57.0,2020-07-30,,,,,https://www.dmo.gov.uk/media/mnyn5x2f/prosp260520.pdf,long,False,False
+GB00BYZW3G56,1½% Treasury Gilt 2026,1.5,2026-07-22,D1C (coupon + year),2016-02-18,D2.1E launch row,2016-07-22,DMO reference prices (accrued interest),155.0,2016-07-22,240.0,127.0,True,False,,short,False,False
+GB00BNNGP668,0 3/8% Treasury Gilt 2026,0.375,2026-10-22,D1A,2021-03-03,D1A,2021-10-22,DMO notice (issuance/pre-auction notice or prospectus),50.0,2021-04-22,,,,,https://www.dmo.gov.uk/media/cfxlrkdh/prosp230221a.pdf,long,False,False
+GB00BL6C7720,4 1/8% Treasury Gilt 2027,4.125,2027-01-29,D1A,2022-10-13,D1A,2023-01-29,rule: issued >= 61 days before next quasi date -> short,108.0,2023-01-29,,,,,,short,True,False
+GB00BPSNB460,3¾% Treasury Gilt 2027,3.75,2027-03-07,D1A,2024-01-11,D1A,2024-09-07,DMO notice (issuance/pre-auction notice or prospectus),56.0,2024-03-07,,,,,https://www.dmo.gov.uk/media/oq1jaj5a/pr030124.pdf,long,False,False
+GB00BDRHNP05,1¼% Treasury Gilt 2027,1.25,2027-07-22,D1A,2017-03-15,D1A,2017-07-22,DMO reference prices (accrued interest),129.0,2017-07-22,95.0,7.0,True,False,,short,False,False
+GB00B16NNR78,4¼% Treasury Gilt 2027,4.25,2027-12-07,D1A,2006-09-06,D1A,2006-12-07,DMO reference prices (accrued interest),92.0,2006-12-07,194.0,123.0,True,False,,short,False,False
+GB00BMBL1G81,0 1/8% Treasury Gilt 2028,0.125,2028-01-31,D1A,2020-06-12,D1A,2021-01-31,DMO notice (issuance/pre-auction notice or prospectus),49.0,2020-07-31,,,,,https://www.dmo.gov.uk/media/n1ylxsoe/pr040620b.pdf,long,False,False
+GB00BSQNRC93,4 3/8% Treasury Gilt 2028,4.375,2028-03-07,D1A,2024-11-14,D1A,2025-03-07,rule: issued >= 61 days before next quasi date -> short,113.0,2025-03-07,,,,,,short,True,False
+GB00BMF9LG83,4½% Treasury Gilt 2028,4.5,2028-06-07,D1A,2023-06-21,D1A,2023-12-07,rule: issued >= 61 days before next quasi date -> short,169.0,2023-12-07,,,,,,short,True,False
+GB00BFX0ZL78,1 5/8% Treasury Gilt 2028,1.625,2028-10-22,D1A,2018-03-16,D1A,2018-10-22,DMO notice (issuance/pre-auction notice or prospectus),37.0,2018-10-22,,,,,https://www.dmo.gov.uk/media/njgorwql/prosp150318.pdf,long,False,False
+GB0002404191,6% Treasury Stock 2028,6.0,2028-12-07,D1A,1998-01-29,D1A,1998-06-07,DMO reference prices (accrued interest),129.0,1998-06-07,25.0,19.0,True,False,,short,False,False
+GB00BLPK7227,0½% Treasury Gilt 2029,0.5,2029-01-31,D1A,2021-09-02,D1A,2022-01-31,rule: issued >= 61 days before next quasi date -> short,151.0,2022-01-31,,,,,,short,True,False
+GB00BVP99566,4% Treasury Gilt 2029,4.0,2029-05-22,D1A,2025-10-09,D1A,2026-05-22,DMO notice (issuance/pre-auction notice or prospectus),44.0,2026-05-22,,,,,https://dmo.gov.uk/media/vfbee0y0/prosp081025b.pdf,long,False,False
+GB00BQC82B83,4 1/8% Treasury Gilt 2029,4.125,2029-07-22,D1A,2024-05-01,D1A,2024-07-22,rule: issued >= 61 days before next quasi date -> short,82.0,2024-07-22,,,,,,short,True,False
+GB00BJMHB534,0 7/8% Treasury Gilt 2029,0.875,2029-10-22,D1A,2019-06-19,D1A,2019-10-22,rule: issued >= 61 days before next quasi date -> short,125.0,2019-10-22,,,,,,short,True,False
+GB00BSQNRD01,4 3/8% Treasury Gilt 2030,4.375,2030-03-07,D1A,2025-01-09,D1A,2025-09-07,DMO notice (issuance/pre-auction notice or prospectus),57.0,2025-03-07,,,,,https://www.dmo.gov.uk/media/u41gljwp/prosp280125.pdf,long,False,False
+GB00BWBR1P52,4 5/8% Treasury Gilt 2030,4.625,2030-05-22,D1A,2026-09-11,D1A,2026-11-22,DMO notice (issuance/pre-auction notice or prospectus),72.0,2026-11-22,,,,,https://www.dmo.gov.uk/media/mh2pkmjz/prosp030926.pdf,short,False,False
+GB00BL68HH02,0 3/8% Treasury Gilt 2030,0.375,2030-10-22,D1A,2020-05-13,D1A,2020-10-22,rule: issued >= 61 days before next quasi date -> short,162.0,2020-10-22,,,,,,short,True,False
+GB00B24FF097,4¾% Treasury Gilt 2030,4.75,2030-12-07,D1A,2007-10-03,D1A,2007-12-07,DMO reference prices (accrued interest),65.0,2007-12-07,176.0,124.0,True,False,,short,False,False
+GB00BVP99673,4 1/8% Treasury Gilt 2031,4.125,2031-03-07,D1A,2025-10-24,D1A,2026-03-07,rule: issued >= 61 days before next quasi date -> short,134.0,2026-03-07,,,,,,short,True,False
+GB00BMGR2809,0¼% Treasury Gilt 2031,0.25,2031-07-31,D1A,2020-11-13,D1A,2021-01-31,rule: issued >= 61 days before next quasi date -> short,79.0,2021-01-31,,,,,,short,True,False
+GB00BPSNBF73,4% Treasury Gilt 2031,4.0,2031-10-22,D1A,2024-02-29,D1A,2024-10-22,DMO notice (issuance/pre-auction notice or prospectus),53.0,2024-04-22,,,,,https://www.dmo.gov.uk/media/52dlkrjw/prosp210224.pdf,long,False,False
+GB00BM8Z2T38,1% Treasury Gilt 2032,1.0,2032-01-31,D1A,2021-12-02,D1A,2022-01-31,DMO notice (issuance/pre-auction notice or prospectus),60.0,2022-01-31,,,,,https://www.dmo.gov.uk/media/1jnasbzb/prosp241121.pdf,short,False,False
+GB00BWGDRG14,4 5/8% Treasury Gilt 2032,4.625,2032-03-07,D1A,2026-08-05,D1A,2027-03-07,DMO notice (issuance/pre-auction notice or prospectus),33.0,2027-03-07,,,,,https://dmo.gov.uk/media/drzceara/prosp040826.pdf,long,False,False
+GB0004893086,4¼% Treasury Stock 2032,4.25,2032-06-07,D1A,2000-05-25,D1A,2000-12-07,DMO reference prices (accrued interest),13.0,2000-12-07,143.0,130.0,False,True,,long,False,False
+GB00BMV7TC88,3¼% Treasury Gilt 2033,3.25,2033-01-31,D1A,2023-01-11,D1A,2023-07-31,DMO notice (issuance/pre-auction notice or prospectus),20.0,2023-07-31,,,,,https://dmo.gov.uk:443/media/m2bbq4nr/prosp030123.pdf,long,False,False
+GB00BVP99780,4 1/8% Treasury Gilt 2033,4.125,2033-03-07,D1A,2025-10-30,D1A,2026-03-07,rule: issued >= 61 days before next quasi date -> short,128.0,2026-03-07,,,,,,short,True,False
+GB00BM8Z2S21,0 7/8% Green Gilt 2033,0.875,2033-07-31,D1A,2021-09-22,D1A,2022-01-31,rule: issued >= 61 days before next quasi date -> short,131.0,2022-01-31,,,,,,short,True,False
+GB00BPJJKN53,4 5/8% Treasury Gilt 2034,4.625,2034-01-31,D1A,2023-10-12,D1A,2024-01-31,rule: issued >= 61 days before next quasi date -> short,111.0,2024-01-31,,,,,,short,True,False
+GB00BQC82C90,4¼% Treasury Gilt 2034,4.25,2034-07-31,D1A,2024-06-12,D1A,2025-01-31,DMO notice (issuance/pre-auction notice or prospectus),49.0,2024-07-31,,,,,https://www.dmo.gov.uk/media/flomkmh1/pr040624_1.pdf,long,False,False
+GB00B52WS153,4½% Treasury Gilt 2034,4.5,2034-09-07,D1A,2009-06-17,D1A,2009-09-07,DMO reference prices (accrued interest),82.0,2009-09-07,184.0,127.0,True,False,,short,False,False
+GB00BT7J0027,4½% Treasury Gilt 2035,4.5,2035-03-07,D1A,2025-02-12,D1A,2025-09-07,DMO notice (issuance/pre-auction notice or prospectus),23.0,2025-09-07,,,,,https://www.dmo.gov.uk/media/0jeppipl/pr040225.pdf,long,False,False
+GB00BMGR2916,0 5/8% Treasury Gilt 2035,0.625,2035-07-31,D1A,2020-09-09,D1A,2021-01-31,rule: issued >= 61 days before next quasi date -> short,144.0,2021-01-31,,,,,,short,True,False
+GB00BTXS1K06,4¾% Treasury Gilt 2035,4.75,2035-10-22,D1A,2025-09-03,D1A,2026-04-22,DMO notice (issuance/pre-auction notice or prospectus),49.0,2025-10-22,,,,,https://dmo.gov.uk/media/mblmcjem/prosp030226a.pdf,long,False,False
+GB0032452392,4¼% Treasury Stock 2036,4.25,2036-03-07,D1A,2003-02-27,D1A,2003-09-07,DMO reference prices (accrued interest),8.0,2003-09-07,138.0,132.0,False,True,,long,False,False
+GB00BWBR1N39,4 7/8% Treasury Gilt 2036,4.875,2036-07-31,D1A,2026-04-15,D1A,2026-07-31,rule: issued >= 61 days before next quasi date -> short,107.0,2026-07-31,,,,,,short,True,False
+GB00BVP99905,4 5/8% Green Gilt 2037,4.625,2037-03-07,D1A,2026-03-11,D1A,2026-09-07,rule: issued >= 61 days before next quasi date -> short,180.0,2026-09-07,,,,,,short,True,False
+GB00BZB26Y51,1¾% Treasury Gilt 2037,1.75,2037-09-07,D1A,2016-11-09,D1A,2017-03-07,DMO reference prices (accrued interest),118.0,2017-03-07,182.0,102.0,True,False,,short,False,False
+GB00BQC4R999,3¾% Treasury Gilt 2038,3.75,2038-01-29,D1A,2022-11-09,D1A,2023-01-29,rule: issued >= 61 days before next quasi date -> short,81.0,2023-01-29,,,,,,short,True,False
+GB00B00NY175,4¾% Treasury Stock 2038,4.75,2038-12-07,D1A,2004-04-23,D1A,2004-12-07,DMO reference prices (accrued interest),45.0,2004-12-07,166.0,130.0,False,True,,long,False,False
+GB00BLPK7334,1 1/8% Treasury Gilt 2039,1.125,2039-01-31,D1A,2021-07-14,D1A,2022-01-31,DMO notice (issuance/pre-auction notice or prospectus),17.0,2022-01-31,,,,,https://www.dmo.gov.uk/media/2zucvjlv/pr060721.pdf,long,False,False
+GB00B3KJDS62,4¼% Treasury Gilt 2039,4.25,2039-09-07,D1A,2009-03-05,D1A,2009-09-07,DMO reference prices (accrued interest),2.0,2009-09-07,133.0,127.0,False,True,,long,False,False
+GB00BQC82D08,4 3/8% Treasury Gilt 2040,4.375,2040-01-31,D1A,2024-09-04,D1A,2025-01-31,rule: issued >= 61 days before next quasi date -> short,149.0,2025-01-31,,,,,,short,True,False
+GB00B6460505,4¼% Treasury Gilt 2040,4.25,2040-12-07,D1A,2010-06-30,D1A,2010-12-07,DMO reference prices (accrued interest),160.0,2010-12-07,235.0,122.0,True,False,,short,False,False
+GB00BVP99897,5¼% Treasury Gilt 2041,5.25,2041-01-31,D1A,2025-10-15,D1A,2026-01-31,rule: issued >= 61 days before next quasi date -> short,108.0,2026-01-31,,,,,,short,True,False
+GB00BJQWYH73,1¼ % Treasury Gilt 2041,1.25,2041-10-22,D1A,2020-01-22,D1A,2020-04-22,rule: issued >= 61 days before next quasi date -> short,91.0,2020-04-22,,,,,,short,True,False
+GB00B1VWPJ53,4½% Treasury Gilt 2042,4.5,2042-12-07,D1A,2007-06-06,D1A,2007-12-07,DMO reference prices (accrued interest),1.0,2007-12-07,136.0,130.0,False,True,,long,False,False
+GB00BPJJKP77,4¾% Treasury Gilt 2043,4.75,2043-10-22,D1A,2023-11-16,D1A,2024-04-22,rule: issued >= 61 days before next quasi date -> short,158.0,2024-04-22,,,,,,short,True,False
+GB00B84Z9V04,3¼% Treasury Gilt 2044,3.25,2044-01-22,D1A,2012-10-24,D1A,2013-01-22,DMO reference prices (accrued interest),90.0,2013-01-22,186.0,125.0,True,False,,short,False,False
+GB00BN65R313,3½% Treasury Gilt 2045,3.5,2045-01-22,D1A,2014-06-25,D1A,2015-01-22,DMO reference prices (accrued interest),27.0,2015-01-22,147.0,128.0,False,True,,long,False,False
+GB00BNNGP775,0 7/8% Treasury Gilt 2046,0.875,2046-01-31,D1A,2021-01-20,D1A,2021-07-31,DMO notice (issuance/pre-auction notice or prospectus),11.0,2021-07-31,,,,,https://www.dmo.gov.uk/media/w1ocebci/pr310321a.pdf,long,False,False
+GB00B128DP45,4¼% Treasury Gilt 2046,4.25,2046-12-07,D1A,2006-05-12,D1A,2006-12-07,DMO reference prices (accrued interest),26.0,2006-12-07,154.0,130.0,False,True,,long,False,False
+GB00BDCHBW80,1½% Treasury Gilt 2047,1.5,2047-07-22,D1A,2016-09-21,D1A,2017-01-22,DMO reference prices (accrued interest),123.0,2017-01-22,216.0,126.0,True,False,,short,False,False
+GB00BFWFPP71,1¾% Treasury Gilt 2049,1.75,2049-01-22,D1A,2018-09-12,D1A,2019-01-22,rule: issued >= 61 days before next quasi date -> short,132.0,2019-01-22,,,,,,short,True,False
+GB00B39R3707,4¼% Treasury Gilt 2049,4.25,2049-12-07,D1A,2008-09-03,D1A,2008-12-07,DMO reference prices (accrued interest),95.0,2008-12-07,196.0,123.0,True,False,,short,False,False
+GB00BMBL1F74,0 5/8% Treasury Gilt 2050,0.625,2050-10-22,D1A,2020-06-10,D1A,2020-10-22,rule: issued >= 61 days before next quasi date -> short,134.0,2020-10-22,,,,,,short,True,False
+GB00BLH38158,1¼% Treasury Gilt 2051,1.25,2051-07-31,D1A,2021-04-28,D1A,2021-07-31,rule: issued >= 61 days before next quasi date -> short,94.0,2021-07-31,,,,,,short,True,False
+GB00B6RNH572,3¾% Treasury Gilt 2052,3.75,2052-07-22,D1A,2011-09-28,D1A,2012-01-22,DMO reference prices (accrued interest),116.0,2012-01-22,205.0,125.0,True,False,,short,False,False
+GB00BM8Z2V59,1½% Green Gilt 2053,1.5,2053-07-31,D1A,2021-10-22,D1A,2022-01-31,rule: issued >= 61 days before next quasi date -> short,101.0,2022-01-31,,,,,,short,True,False
+GB00BPCJD997,3¾% Treasury Gilt 2053,3.75,2053-10-22,D1A,2023-01-25,D1A,2023-04-22,rule: issued >= 61 days before next quasi date -> short,87.0,2023-04-22,,,,,,short,True,False
+GB00BPSNBB36,4 3/8% Treasury Gilt 2054,4.375,2054-07-31,D1A,2024-01-24,D1A,2024-07-31,DMO notice (issuance/pre-auction notice or prospectus),7.0,2024-07-31,,,,,https://www.dmo.gov.uk/media/5oeb504d/pr160124.pdf,long,False,False
+GB00BJLR0J16,1 5/8% Treasury Gilt 2054,1.625,2054-10-22,D1A,2019-05-15,D1A,2019-10-22,rule: issued >= 61 days before next quasi date -> short,160.0,2019-10-22,,,,,,short,True,False
+GB00B06YGN05,4¼% Treasury Gilt 2055,4.25,2055-12-07,D1A,2005-05-27,D1A,2005-12-07,DMO reference prices (accrued interest),11.0,2005-12-07,143.0,137.0,False,True,,long,False,False
+GB00BT7J0241,5 3/8% Treasury Gilt 2056,5.375,2056-01-31,D1A,2025-05-21,D1A,2025-07-31,rule: issued >= 61 days before next quasi date -> short,71.0,2025-07-31,,,,,,short,True,False
+GB00BD0XH204,1¾% Treasury Gilt 2057,1.75,2057-07-22,D1A,2017-01-25,D1A,2017-07-22,DMO reference prices (accrued interest),178.0,2017-07-22,125.0,7.0,True,False,,short,False,False
+GB00B54QLM75,4% Treasury Gilt 2060,4.0,2060-01-22,D1A,2009-10-22,D1A,2010-01-22,DMO reference prices (accrued interest),92.0,2010-01-22,188.0,125.0,True,False,,short,False,False
+GB00BMBL1D50,0½% Treasury Gilt 2061,0.5,2061-10-22,D1A,2020-05-20,D1A,2020-10-22,rule: issued >= 61 days before next quasi date -> short,155.0,2020-10-22,,,,,,short,True,False
+GB00BMF9LF76,4% Treasury Gilt 2063,4.0,2063-10-22,D1A,2023-05-17,D1A,2023-10-22,rule: issued >= 61 days before next quasi date -> short,158.0,2023-10-22,,,,,,short,True,False
+GB00BYYMZX75,2½% Treasury Gilt 2065,2.5,2065-07-22,D1A,2015-10-21,D1A,2016-01-22,DMO reference prices (accrued interest),93.0,2016-01-22,190.0,126.0,True,False,,short,False,False
+GB00BBJNQY21,3½% Treasury Gilt 2068,3.5,2068-07-22,D1A,2013-06-26,D1A,2014-01-22,DMO reference prices (accrued interest),26.0,2014-01-22,146.0,128.0,False,True,,long,False,False
+GB00BFMCN652,1 5/8% Treasury Gilt 2071,1.625,2071-10-22,D1A,2018-05-16,D1A,2018-10-22,rule: issued >= 61 days before next quasi date -> short,159.0,2018-10-22,,,,,,short,True,False
+GB00BLBDX619,1 1/8% Treasury Gilt 2073,1.125,2073-10-22,D1A,2022-02-09,D1A,2022-04-22,rule: issued >= 61 days before next quasi date -> short,72.0,2022-04-22,,,,,,short,True,False
