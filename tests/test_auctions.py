@@ -37,15 +37,17 @@ def test_bucket_bands(years, expected):
     assert au.bucket(years) == expected
 
 
-@pytest.mark.parametrize("day, expected", [
-    (dt.date(2008, 12, 31), "pre-crisis"), (dt.date(2009, 1, 1), "QE"), (dt.date(2022, 1, 31), "QE"),
-    (dt.date(2022, 2, 1), au.REGIME_OPEN), (dt.date(2022, 9, 23), "LDI stress"),
-    (dt.date(2022, 10, 14), "LDI stress"), (dt.date(2022, 10, 18), au.REGIME_OPEN),
-    (dt.date(2022, 11, 1), "active QT"), (dt.date(2026, 9, 16), "active QT"),
-    (dt.date(2026, 9, 17), "post-QT-decision")])
-def test_regime_boundaries(day, expected):
-    """Spec §8 regimes; Feb-Oct 2022 outside the LDI window stays an explicit open category."""
+@pytest.mark.parametrize("day, expected, passive", [
+    (dt.date(2008, 12, 31), "pre-crisis", False), (dt.date(2009, 1, 1), "QE", False),
+    (dt.date(2022, 1, 31), "QE", False), (dt.date(2022, 2, 1), "QE", True), (dt.date(2022, 9, 22), "QE", True),
+    (dt.date(2022, 9, 23), "LDI stress", False), (dt.date(2022, 10, 14), "LDI stress", False),
+    (dt.date(2022, 10, 18), "QE", True), (dt.date(2022, 10, 31), "QE", True),
+    (dt.date(2022, 11, 1), "active QT", False), (dt.date(2026, 9, 16), "active QT", False),
+    (dt.date(2026, 9, 17), "post-QT-decision", False)])
+def test_regime_boundaries(day, expected, passive):
+    """Spec §8 regimes with decision #14: Feb-Oct 2022 outside the LDI window is QE, flagged."""
     assert au.regime(day) == expected
+    assert au.passive_qt_2022(day) == passive
 
 
 # ---------------------------------------------------------------- spec §6 panel checks
@@ -140,3 +142,19 @@ def test_negative_tail_is_flagged_not_changed(panel):
     published and flagged."""
     r = panel[panel["flag_tail_negative"]]
     assert list(r["auction_date"]) == [dt.date(2009, 3, 4)] and r["tail_bp"].iloc[0] == -5.5
+
+
+def test_stage3_decisions_applied(panel, checks):
+    """Decision #15: tail set missing for regressions on 4 Mar 2009 only; no other negative tail,
+    before or after 2010; QE-purchase-week and QT-sale-week dummies; 24 passive-QT auctions in QE."""
+    neg = panel[panel["tail_bp"] < 0]
+    assert list(neg["auction_date"]) == [dt.date(2009, 3, 4)]
+    assert panel["tail_bp_regression"].isna().sum() == 1
+    assert checks["tail_sign_by_period"].loc["before 2010", "negative"] == 1
+    assert checks["tail_sign_by_period"].loc["2010 onwards", "negative"] == 0
+    assert int(panel["passive_qt_2022"].sum()) == 24
+    assert set(panel.loc[panel["passive_qt_2022"], "regime"]) == {"QE"}
+    assert (panel["qe_purchase_week"] == (panel["qe_purchase_days_pm5bd"] > 0)).all()
+    qe = panel[panel["qe_purchase_week"]]
+    assert qe["auction_date"].min() >= dt.date(2009, 3, 4) and qe["auction_date"].max() <= dt.date(2021, 12, 22)
+    assert (panel["qt_sale_week"] == (panel["qt_sale_days_pm5bd"] > 0)).all()

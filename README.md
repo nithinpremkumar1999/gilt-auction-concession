@@ -12,13 +12,15 @@ The method, conventions and every decision are in the **build spec** (`claude/bu
 │   ├── curve.py             BoE curve panel (1998-2026), Curve (spline, flat-forward extrapolation), curve pricer
 │   ├── gilt_terms.py        first issue and first coupon dates per gilt (P3, P4), WI tranche dates (P2)
 │   ├── auctions.py          the auction panel (Stage 3): D2.1A + D2.1E + terms + curve, panel checks
+│   ├── measures.py          M1, M1b, M2 (control B-β; B) and the PM's three numbers (Stage 4)
 │   ├── data_io.py           DMO readers; test-scope filters (single-dated, linker spellings)
 │   ├── inventory.py         SHA-256 manifest of data/raw_data and its check
 │   ├── plotting.py          one chart, two outputs: seaborn PNG + Plotly HTML (decision #9)
 │   ├── paths.py             every file location
 │   ├── config.py            study parameters from logged decisions (sample start 1 Nov 1998, #7)
-│   └── exercises/           validation scripts: exercise_a (Stage 1), exercise_b + curve_checks (Stage 2)
-├── notebooks/               00 inventory · 01 pricer test · 02 curve panel · 03 auction panel (the why, before code)
+│   └── exercises/           validation scripts: exercise_a (Stage 1), exercise_b + curve_checks (Stage 2),
+│                            handcheck_stage4 (Stage 4 hand-check workbook)
+├── notebooks/               00 inventory · 01 pricer · 02 curve · 03 auction panel · 04 measures (the why, before code)
 ├── reports/
 │   ├── figures/             static charts (seaborn), PNG
 │   └── interactive/         interactive charts (Plotly), HTML
@@ -28,7 +30,7 @@ The method, conventions and every decision are in the **build spec** (`claude/bu
 │   ├── interim_data/        regenerable intermediate data (gilt_terms.csv)
 │   ├── processed_data/      analysis-ready data and validation outputs
 │   └── DATA.md              log of every change to interim/processed data
-├── tests/                   pytest: Stage 0 checks, gilt terms, Stages 1-3
+├── tests/                   pytest: Stage 0 checks, gilt terms, Stages 1-4
 ├── SOURCES.md               every raw file: URL, download date, observed coverage, SHA-256, known issues
 ├── requirements.txt         pinned versions (match the project .venv)
 └── pyproject.toml           makes src/gilt_study installable
@@ -52,6 +54,8 @@ python -m gilt_study.exercises.exercise_a --as-run # the Stage 1 record as first
 python -m gilt_study.exercises.exercise_b          # Stage 2 curve acceptance test, 15 Mar 2016
 python -m gilt_study.exercises.curve_checks        # Stage 2 extrapolation checks (~2 min)
 python -m gilt_study.auctions                      # Stage 3 auction panel + panel checks (~20 s)
+python -m gilt_study.measures                      # Stage 4 M1, M1b, M2 (~4 min first time; ~1 min from the cache)
+python -m gilt_study.exercises.handcheck_stage4    # Stage 4 hand-check workbook (recalculate in Excel/LibreOffice)
 ```
 
 Notebooks import the installed package (`from gilt_study import ...`), so they work from any folder.
@@ -216,7 +220,7 @@ So flat forward is the better of the two, but long pre-2016 auctions carry a bia
    - Amount offered and uncovered auctions: D2.1A has no offered amount (Stage 3).
    - The PM's benchmark (spec §1).
 
-### Stage 3: auction panel, spec §6 (20 Oct 2026). Gate: panel checks
+### Stage 3: auction panel, spec §6 (20 Oct 2026). Signed off 20 Oct 2026
 
 **Delivered**
 - `auctions.py` builds `build_panel()`, which writes `data/processed_data/auctions/auction_panel.csv`: **912 conventional auctions**, 26 May 1999 – 29 Sep 2026, 69 columns. Its inputs:
@@ -253,14 +257,69 @@ So flat forward is the better of the two, but long pre-2016 auctions carry a bia
 - Every DMO settlement date is T+1.
 - 80 new issues and 832 reopenings.
 - 101 auctions are priced partly beyond the curve (88 before 2016); 75 are more than 5 years beyond.
-- Regimes: pre-crisis 129, QE 546, Feb–Oct 2022 (open) 24, LDI stress 3, active QT 208, post-QT-decision 2.
+- Regimes, after the sign-off: pre-crisis 129, QE 570 (including the 24 Feb–Oct 2022 auctions, flagged `passive_qt_2022`), LDI stress 3, active QT 208, post-QT-decision 2.
 
 **Tests run:** `pytest`, 69 passed. New: `test_auctions.py` (26 tests): calendar helpers, bucket and regime boundaries, the four spec checks, settlement, AAP repricing, two result notices, years beyond the curve, new-issue and first-coupon flags, the supply window, the negative-tail flag.
 
-**Could not resolve (needs decisions at the gate)**
+**Sign-off (20 Oct 2026; decisions #13–15), applied in Stage 4:**
+- Volatility at the gilt's own maturity (10y as robustness).
+- DV01 from the allotment excluding PAOF (including PAOF as robustness).
+- Feb–Oct 2022 in QE (`passive_qt_2022` flags it for the robustness drop). This includes 18–26 Oct 2022, after the LDI window.
+- Syndications and tenders include linker operations (conventional-only as robustness).
+- `qe_purchase_week` dummy: an APF QE purchase within ±5 business days (321 auctions); `qt_sale_week` alongside it (157).
+- `tail_bp_regression` sets the 4 Mar 2009 tail to missing. No other tail is negative: 173 positive and 4 zero before 2010, so there is no sign-convention change.
+
+**Could not resolve at the gate** (all decided as above)
 1. **Rate volatility** is not defined in spec §6. The panel has two candidates: the 20-day realised volatility of the BoE spot rate to T-1, at 10y and at the gilt's own maturity (correlation 0.90).
 2. **Auction DV01 nominal:** the allotment (known before the auction), or the total including the PAOF (partly an outcome)? Both are recorded.
 3. **Feb–Oct 2022** (24 auctions outside the LDI window): regime treatment is open (spec §8). They are labelled `Feb-Oct 2022 (open)`.
 4. **4 Mar 2009, 4¼% 2039: D2.1A tail −5.5 bp** (impossible; data issue). Kept and flagged. Keep it, set it to missing, or drop the auction from tail regressions?
 5. **Supply controls:** should syndications and tenders include linker operations? Both versions are recorded. Should QE purchases be added (data #10, not in spec §6)?
 6. Still open: the M2 control (Module 4, today), the PM's benchmark (§1), and the OIS control C start date.
+
+### Stage 4: M1, M1b, M2, spec §7 (20 Oct 2026). Gate: hand check of 5 auctions; distribution plots
+
+**Delivered**
+- `measures.py` (`python -m gilt_study.measures`):
+  - **M1** = AAY − model yield off the T-1 curve, priced for the auction's settlement date.
+  - **M1b** = M1 − the gilt's mean DMO residual over T-25…T-6.
+  - **M2**: the T-10…T+10 path with control **B-β** (decision #13): mean change of BoE spot points 2–30y lying more than 3y from the gilt; β by OLS over T-120…T-21; AR = Δy − β·Δc; CAR = 0 at T-6. Robustness **B** (β = 1) and the raw path are kept.
+  - The PM's three numbers.
+  - Event days are UK business days, which are exactly the BoE curve dates.
+- Outputs: `data/processed_data/measures/{auction_measures.csv, m2_paths.csv.gz, m1b_residuals.csv.gz}` and the model-yield cache `data/interim_data/auction_gilt_model_yields.csv.gz`.
+- **Hand check:** `data/processed_data/measures/handcheck_5_auctions.xlsx` covers five auctions:
+  - short: 6 Aug 2013, 1¼% 2018;
+  - medium: 21 Oct 2010, 3¾% 2020;
+  - long: 9 Oct 2012, 4¼% 2032;
+  - new issue: 15 Mar 2018, 1⅝% 2028, with a long first coupon;
+  - Sept–Oct 2022: 4 Oct 2022, 0½% 2061 (LDI window).
+
+  Each has every intermediate value as live formulas: cash flows, z, DF, PV, dirty price, the re-pricing at the model yield, the M1b residuals, the 132 days of model yields and control changes, β by SLOPE, AR, CAR and the three numbers. LibreOffice recalculates all 32,145 formulas with 0 errors and reproduces the Python results to ~1e-8. Notebook 04 §5 shows the same tables.
+- `notebooks/04_measures.ipynb`. Charts: `m1_m1b_by_bucket`, `m1_over_time`, `m2_car_paths`, `m2_pm_numbers`, `m2_beta_distribution`.
+- Stage 3 sign-off applied to the panel (see Stage 3).
+
+**Results (descriptive; inference is Stage 5)**
+- **Coverage:** M1 and M2 for all 912 auctions. M1b for 309 (2003–2017). It is missing for 472 auctions outside the DMO yields, 80 new issues, and 51 with < 10 valid days.
+- **M1** mean / median: short 7.0 / 5.4bp, medium 2.4 / 2.4bp, long −0.2 / −0.1bp. **M1b**: 2.1 / 1.4, 0.9 / 0.9, 1.1 / 1.0bp.
+- **β:** 0.40–1.42 (median ≈ 1, median R² 0.93). No outliers (β < 0 or > 3).
+- **M2 (B-β):** mean pre-auction +0.4 to +0.5bp, auction day −0.1 to +0.2bp, post-auction −0.3 to −0.7bp by bucket. B (β = 1) correlates 0.94–0.96 with B-β. The LDI-window auctions are extreme: pre −18bp, then cheapening.
+- **M1's settlement choice is immaterial:** pricing for the curve's own settlement date instead moves M1 by ≤ 0.17bp.
+
+**Tests run:** `pytest`, 83 passed. New: `test_measures.py` (11 tests) covers:
+- the CAR, OLS and control-set arithmetic on synthetic data;
+- M1 for every auction and the settlement check;
+- M1b coverage and rules;
+- the M2 path consistency (CAR 0 at T-6, steps = AR, three numbers = CAR differences, no α);
+- the coverage counts and the five hand-check auctions.
+
+`test_auctions.py` gains the decision #14–15 checks.
+
+**Could not resolve (needs decisions at the gate)**
+1. **M1b exclusion rule** (spec: "excludes … any earlier auction of the same gilt inside [the window]"). Built as: drop days within ±5 business days of an earlier auction, with ≥ 10 valid days required. Looser rules give 352–359 auctions instead of 309, with mean M1b 1.27–1.30bp instead of 1.37bp.
+2. **The PM's three numbers.** Built as pre = CAR(T-1) − CAR(T-6), day = CAR(T) − CAR(T-1), post = CAR(T+5) − CAR(T). Confirm this reading of "T-5 → T-1" and "T → T+5".
+3. **M1 after 2017 is mostly gilt-level cheapness.** The gilt's own mean explains 69% of M1's variance for 2018–2026 (48% before). Examples: 4⅛% 2027 sits at 17–43bp over 9 auctions, 3½% 2025 at 7–35bp. M1b cannot be computed after Jul 2017. Options:
+   - gilt fixed effects in the Stage 5 regressions;
+   - a within-gilt M1;
+   - leaning on M2 for 2018–2026.
+4. **2022 financial-stability purchases** were also made through the APF. They are not in `qe_purchase_week`; they are recorded separately (5 auctions). Should they count?
+5. Control C (gilt − OIS, from Dec 2021) and all inference are Stage 5.

@@ -34,16 +34,28 @@ Derived fields (each stated here so nothing is decided silently)
 * dv01_per_100: `pricing.gilt_price()` DV01 (dirty, per £100 nominal, per 1bp) at the AAY for
   settlement on the issue date. Auction DV01 (£ per bp) = dv01_per_100 x nominal / 100, given
   for the auction allotment and for the total including the PAOF.
-* regime (spec §8, by auction date): pre-crisis (to Dec 2008), QE (2009 - Jan 2022), LDI stress
-  (23 Sep - 14 Oct 2022), active QT (Nov 2022 - 16 Sep 2026), post-QT-decision (17 Sep 2026 on).
-  Auctions from 1 Feb to 31 Oct 2022 outside the LDI window are labelled 'Feb-Oct 2022 (open)':
-  their treatment is an open decision in spec §8.
-* Supply controls (spec §6): operations from 5 UK business days before to 5 after the auction
+* regime (spec §8, decision #14, by auction date): pre-crisis (to Dec 2008), QE (2009 - 22 Sep
+  2022), LDI stress (23 Sep - 14 Oct 2022), active QT (1 Nov 2022 - 16 Sep 2026),
+  post-QT-decision (17 Sep 2026 on). The passive-QT months Feb-Oct 2022 outside the LDI window
+  (including 15-31 Oct 2022) are in QE and flagged `passive_qt_2022` (robustness: drop them).
+* Supply controls (spec §6/§8): operations from 5 UK business days before to 5 after the auction
   date (inclusive): syndications (D10A), tenders (D2.1PROF9), BoE QT sales (days with an
-  allocation). Taps and mini-tender re-sales (other operations file) are recorded separately.
-* Rate volatility (spec §6 does not define it; two candidates, decision open): standard deviation
-  of the daily changes (bp) in the BoE spot rate over the 20 changes ending at T-1, at 10 years
-  and at the auctioned gilt's own maturity.
+  allocation), BoE APF QE purchases (days with an allocation). `qe_purchase_week` and
+  `qt_sale_week` are the dummies. Taps and mini-tender re-sales (other operations file) and the
+  2022 financial-stability purchases and sales (#11) are recorded separately, not in the dummies.
+* Rate volatility: standard deviation of the daily changes (bp) in the BoE spot rate over the 20
+  changes ending at T-1, at the auctioned gilt's own maturity and at 10 years.
+* tail_bp_regression = tail_bp, set to missing where the published tail is negative (4 Mar 2009,
+  decision #15); tail_bp keeps the published value.
+
+Main and robustness variables (decision #15)
+--------------------------------------------
+  volatility      main: vol_own_maturity_20d_bp          robustness: vol_10y_20d_bp
+  auction DV01    main: dv01_gbp_per_bp_auction (excl.   robustness: dv01_gbp_per_bp_total
+                  PAOF)
+  syndications    main: synd_n_pm5bd (incl. linkers)     robustness: synd_conv_n_pm5bd
+  tenders         main: tender_n_pm5bd (incl. linkers)   robustness: tender_conv_n_pm5bd
+  regime sample   main: all                              robustness: drop passive_qt_2022
 
 Checks (spec §6 + one more): `panel_checks()`.
 
@@ -69,14 +81,16 @@ SUPPLY_WINDOW_BDAYS = 5          # spec §6: supply controls within +-5 business
 VOL_CHANGES = 20                 # rate volatility: daily changes ending at T-1
 PAOF_START = dt.date(2009, 6, 1)  # D2.1A notes 5-6
 
-REGIMES = [  # (label, first auction date, last auction date), spec §8
+REGIMES = [  # (label, first auction date, last auction date), spec §8, decision #14
     ("pre-crisis", dt.date(1998, 11, 1), dt.date(2008, 12, 31)),
-    ("QE", dt.date(2009, 1, 1), dt.date(2022, 1, 31)),
+    ("QE", dt.date(2009, 1, 1), dt.date(2022, 9, 22)),
     ("LDI stress", dt.date(2022, 9, 23), dt.date(2022, 10, 14)),
+    ("QE", dt.date(2022, 10, 15), dt.date(2022, 10, 31)),      # 'Feb-Oct 2022 in QE' (decision #14)
     ("active QT", dt.date(2022, 11, 1), dt.date(2026, 9, 16)),
     ("post-QT-decision", dt.date(2026, 9, 17), dt.date(2099, 12, 31)),
 ]
-REGIME_OPEN = "Feb-Oct 2022 (open)"
+LDI_WINDOW = (dt.date(2022, 9, 23), dt.date(2022, 10, 14))
+PASSIVE_QT_2022 = (dt.date(2022, 2, 1), dt.date(2022, 10, 31))   # minus the LDI window
 
 
 # ============================================================================ calendar helpers
@@ -113,9 +127,12 @@ def regime(d: dt.date) -> str:
     for label, a, b in REGIMES:
         if a <= d <= b:
             return label
-    if dt.date(2022, 2, 1) <= d <= dt.date(2022, 10, 31):
-        return REGIME_OPEN
     return "before sample"
+
+
+def passive_qt_2022(d: dt.date) -> bool:
+    """Feb-Oct 2022 outside the LDI window: in QE (decision #14), dropped in a robustness check."""
+    return PASSIVE_QT_2022[0] <= d <= PASSIVE_QT_2022[1] and not (LDI_WINDOW[0] <= d <= LDI_WINDOW[1])
 
 
 def _num(s):
@@ -191,6 +208,40 @@ def _qt_maturity(code: str):
     """'UKT_0.125_300126' -> 30 Jan 2026."""
     m = re.search(r"_(\d{6})$", str(code).strip())
     return dt.datetime.strptime(m.group(1), "%d%m%y").date() if m else None
+
+
+def _boe_operations(path, sheet=0) -> pd.DataFrame:
+    """A BoE APF operations workbook (QE purchases, QT sales, 2022 FS operations): one row per bond
+    per operation with operation date, ISIN, bond code and nominal allocated (> 0 only)."""
+    raw = pd.read_excel(path, sheet_name=sheet, header=None)
+    hdr = next(i for i in range(10) if any(str(v).strip() == "Operation date" for v in raw.iloc[i]))
+    names = [" ".join(str(v).split()) for v in raw.iloc[hdr]]
+    col = lambda label: names.index(label)
+    q = pd.DataFrame({"date": raw.iloc[hdr + 1:, col("Operation date")],
+                      "isin": raw.iloc[hdr + 1:, col("ISIN")],
+                      "bond": raw.iloc[hdr + 1:, col("Bond")],
+                      "nominal": raw.iloc[hdr + 1:, col("Total allocation (nominal £mn)")]})
+    q = q[pd.to_datetime(q["date"], errors="coerce").notna()].copy()
+    q["date"] = pd.to_datetime(q["date"]).dt.date
+    q["nominal"] = _num(q["nominal"])
+    return q[q["nominal"] > 0].reset_index(drop=True)
+
+
+def load_qe_purchases() -> pd.DataFrame:
+    """BoE APF gilt purchases (QE), 2009-2021 (data #10)."""
+    return _boe_operations(paths.QE_PURCHASES)
+
+
+def load_fs_operations() -> pd.DataFrame:
+    """BoE 2022 financial-stability operations (data #11): purchases (Sep-Oct 2022) and the later
+    sales of that portfolio. Column `kind` = 'purchase' or 'sale'."""
+    files = {f.name: f for f in paths.CRISIS_OPS_DIR.iterdir()}
+    parts = []
+    for name, kind in [("long-dated-uk-government-bond-purchase-time-series.XLSX", "purchase"),
+                       ("index-linked-gilt-purchase-results.XLSX", "purchase"),
+                       ("finanical-stability-gilt-sales-time-series.XLSX", "sale")]:
+        parts.append(_boe_operations(files[name]).assign(kind=kind))
+    return pd.concat(parts, ignore_index=True)
 
 
 def load_qt_sales() -> pd.DataFrame:
@@ -320,14 +371,21 @@ def build_panel(write: bool = True) -> pd.DataFrame:
 
     # ---- regime, financial year
     a["regime"] = a["auction_date"].map(regime)
+    a["passive_qt_2022"] = a["auction_date"].map(passive_qt_2022)
+    a["tail_bp_regression"] = a["tail_bp"].where(~a["flag_tail_negative"])      # decision #15
     a["financial_year"] = a["auction_date"].map(financial_year)
 
     # ---- supply controls (+-5 UK business days, inclusive)
     S, Td, O, Q = load_syndications(), load_tenders(), load_other_supply(), load_qt_sales()
     qd = Q.groupby("date").agg(nominal=("nominal", "sum")).reset_index()
+    QE = load_qe_purchases().groupby("date").agg(nominal=("nominal", "sum")).reset_index()
+    FS = load_fs_operations()
+    fsp = FS[FS["kind"] == "purchase"].groupby("date").agg(nominal=("nominal", "sum")).reset_index()
+    fss = FS[FS["kind"] == "sale"].groupby("date").agg(nominal=("nominal", "sum")).reset_index()
     cols = {k: [] for k in ["synd_n", "synd_nominal", "synd_conv_n", "tender_n", "tender_nominal", "tender_conv_n",
                             "qt_sale_days", "qt_sale_nominal", "qt_sale_same_bucket_nominal",
-                            "other_supply_n", "other_supply_nominal"]}
+                            "other_supply_n", "other_supply_nominal", "qe_purchase_days", "qe_purchase_nominal",
+                            "fs_purchase_days", "fs_sale_days"]}
     sd, sn, sc = np.array(S["date"]), S["nominal"].to_numpy(float), np.array(~S["index_linked"])
     td, tn, tc = np.array(Td["date"]), Td["nominal"].to_numpy(float), np.array(~Td["index_linked"])
     od, on = np.array(O["date"]), O["nominal"].to_numpy(float)
@@ -343,23 +401,31 @@ def build_panel(write: bool = True) -> pd.DataFrame:
         qb = Q[(Q["bucket"] == r.bucket)]
         cols["qt_sale_same_bucket_nominal"].append(_window_stats(np.array(qb["date"]), qb["nominal"].to_numpy(float), lo, hi)[1])
         n, v = _window_stats(od, on, lo, hi); cols["other_supply_n"].append(n); cols["other_supply_nominal"].append(v)
+        n, v = _window_stats(np.array(QE["date"]), QE["nominal"].to_numpy(float), lo, hi)
+        cols["qe_purchase_days"].append(n); cols["qe_purchase_nominal"].append(v)
+        cols["fs_purchase_days"].append(_window_stats(np.array(fsp["date"]), fsp["nominal"].to_numpy(float), lo, hi)[0])
+        cols["fs_sale_days"].append(_window_stats(np.array(fss["date"]), fss["nominal"].to_numpy(float), lo, hi)[0])
     for k, v in cols.items():
         a[f"{k}_pm5bd"] = v
+    a["qe_purchase_week"] = a["qe_purchase_days_pm5bd"] > 0          # decision #15
+    a["qt_sale_week"] = a["qt_sale_days_pm5bd"] > 0
 
     # ---- rate volatility candidates (decision open)
     a["vol_10y_20d_bp"], a["vol_own_maturity_20d_bp"] = _volatility(a, cp)
 
     a = a.drop(columns=["paof"])
-    order = ["auction_date", "settlement_date", "settlement_is_t_plus_1", "financial_year", "regime",
+    order = ["auction_date", "settlement_date", "settlement_is_t_plus_1", "financial_year", "regime", "passive_qt_2022",
              "gilt_name", "isin", "coupon", "maturity", "first_issue", "new_issue", "first_coupon",
              "first_coupon_source", "first_coupon_type", "first_coupon_affects_price", "flag_first_coupon_rule",
              "gilt_first_coupon_from_rule", "flag_first_coupon_manual_check",
              "nominal_offered", "nominal_allotted", "paof_takeup", "nominal_total", "cash_raised", "bid_to_cover",
-             "aap", "aay", "tail_bp", "yield_at_lowest_accepted_price", "flag_tail_negative", "years_to_maturity", "bucket",
+             "aap", "aay", "tail_bp", "tail_bp_regression", "yield_at_lowest_accepted_price", "flag_tail_negative",
+             "years_to_maturity", "bucket",
              "dv01_per_100", "dv01_gbp_per_bp_auction", "dv01_gbp_per_bp_total",
              "t_minus_1", "curve_date", "curve_fallback", "curve_t_max", "beyond_curve", "years_beyond_curve",
              "drop_extrapolation_robustness"]
-    order += [c for c in a.columns if c.endswith("_pm5bd")] + ["vol_10y_20d_bp", "vol_own_maturity_20d_bp"]
+    order += [c for c in a.columns if c.endswith("_pm5bd")] + ["qe_purchase_week", "qt_sale_week",
+                                                               "vol_own_maturity_20d_bp", "vol_10y_20d_bp"]
     order += ["accrued_at_settlement", "clean_at_aay", "aap_decimals", "aay_decimals", "aap_check_error", "aap_check",
               "nominal_auction", "d2_1e_name", "d2_1e_nominal", "d2_1e_minus_d2_1a_nominal", "d2_1e_cumulative",
               "d2_1e_candidate_isins", "d2_1e_nominal_matches", "maturity_source", "first_issue_source"]
@@ -475,6 +541,13 @@ def panel_checks(P: pd.DataFrame | None = None) -> dict:
                                              ["auction_date", "gilt_name", "nominal_total", "d2_1e_nominal",
                                               "d2_1e_minus_d2_1a_nominal"]]
     out["tail_negative"] = P.loc[P["flag_tail_negative"].astype(bool), ["auction_date", "gilt_name", "aay", "tail_bp"]]
+    # decision #15: a sign-convention change would make many tails negative; tabulate by period
+    yrs = pd.to_datetime(P["auction_date"]).dt.year
+    period = np.where(yrs < 2010, "before 2010", "2010 onwards")
+    out["tail_sign_by_period"] = (P.assign(period=period).groupby("period")["tail_bp"]
+                                  .agg(auctions="size", negative=lambda s: int((s < 0).sum()),
+                                       zero=lambda s: int((s == 0).sum()), positive=lambda s: int((s > 0).sum()),
+                                       median="median", min="min", max="max"))
     out["settlement_not_t_plus_1"] = P.loc[~P["settlement_is_t_plus_1"].astype(bool),
                                            ["auction_date", "settlement_date", "gilt_name"]]
     return out
