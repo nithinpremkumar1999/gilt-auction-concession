@@ -72,12 +72,15 @@ def test_m1_settlement_choice_is_immaterial(M):
 
 
 def test_m1b_coverage_and_rules(M):
-    """M1b only where the DMO yields exist, never for new issues, always on >= 10 valid days."""
+    """M1b only where DMO reference prices exist (1 Nov 1998 - 21 Jul 2017; yields from the DMO clean
+    price before 25 Nov 2002, decision #17), never for new issues, always on >= 10 valid days."""
     has = M["m1b_bp"].notna()
     assert not (has & M["new_issue"]).any()
     assert (M.loc[has, "m1b_days"] >= ms.M1B_MIN_DAYS).all()
     d = pd.to_datetime(M.loc[has, "auction_date"])
-    assert d.min() > pd.Timestamp(config.PRICER_TEST_WINDOW[0]) and d.max() <= pd.Timestamp("2017-08-31")
+    assert d.min() > pd.Timestamp(ms.REF_DATA_WINDOW[0]) and d.max() <= pd.Timestamp("2017-08-31")
+    # 9 auctions before 25 Nov 2002; the 10th addition (3 Dec 2002) gains days from the clean-price yields
+    assert (d < pd.Timestamp(config.PRICER_TEST_WINDOW[0])).sum() == 9
     assert np.allclose(M.loc[has, "m1b_bp"], M.loc[has, "m1_bp"] - M.loc[has, "m1b_baseline_bp"])
     assert M.loc[~has, "m1b_missing_reason"].notna().all()
 
@@ -108,8 +111,9 @@ def test_ar_definitions(paths_, M):
 
 
 def test_coverage_counts(M):
-    """Stage 4 record: M1 and M2 for all 912 auctions; M1b for 309 (defaults: +-5 days, >= 10 days)."""
-    assert int(M["m1b_bp"].notna().sum()) == 309
+    """M1 and M2 for all 912 auctions; M1b for 319 (defaults: +-5 days, >= 10 days). Stage 4 had 309;
+    decision #17 extended the market yields back to Nov 1998 (yields from the DMO clean price)."""
+    assert int(M["m1b_bp"].notna().sum()) == 319
     assert int(M["m1b_missing_reason"].eq("new issue: no prices before launch").sum()) == 80
     assert not M["beta_outlier"].any()
 

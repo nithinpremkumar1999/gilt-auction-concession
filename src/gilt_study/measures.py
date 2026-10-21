@@ -20,7 +20,15 @@ M1b, baseline-adjusted concession, 1998-2017 (decision #4)
       earlier auction of the same gilt (the same +-5 used for the pre/post windows);
     * at least 10 valid days of the 20, else M1b is missing.
   M1b is missing for new issues (no prices before launch) and outside the reference-price data
-  (DMO yields exist 25 Nov 2002 - 21 Jul 2017).
+  (1 Nov 1998 - 21 Jul 2017). Market yield = the DMO yield where published (from 25 Nov 2002); before
+  that, the yield our pricer gives for the DMO clean price plus our accrued interest (spec §7, v0.5).
+
+M3, bond residual path (spec §7, decision #17)
+-----------------------------------------------
+  r_k = 100 x (market yield - model yield) of the auctioned gilt on day T+k, k = -10..+10, from the
+  DMO reference prices (own ISIN line; market yield as for M1b). The three numbers are changes in
+  r over the same windows as M2: pre = r_-1 - r_-6, day = r_0 - r_-1, post = r_5 - r_0 (missing if
+  an end point is missing). Available 1 Nov 1998 - 21 Jul 2017.
 
 M2, event path with control B-beta (decision #13)
 -------------------------------------------------
@@ -50,6 +58,9 @@ Outputs
   data/processed_data/measures/auction_measures.csv   one row per auction: M1, M1b, beta, PM numbers
   data/processed_data/measures/m2_paths.csv.gz        T-10..T+10 path per auction
   data/processed_data/measures/m1b_residuals.csv.gz   T-25..T-6 residuals per auction
+  data/processed_data/measures/m3_paths.csv.gz        T-10..T+10 bond residual path per auction
+  data/interim_data/auctioned_gilts_market_yields.csv.gz  market yields of the auctioned gilts,
+                                                      1 Nov 1998 - 21 Jul 2017 (DMO, or from clean)
 
 Run:  python -m gilt_study.measures            (about 10 minutes on 2 cores the first time)
 """
@@ -63,12 +74,16 @@ import pandas as pd
 from . import auctions as au, config, paths
 from .curve import Curve, curve_on, effective_settlement, load_panel, maturity_columns, model_yield
 from .data_io import load_reference_prices
-from .pricing import next_business_day
+from .pricing import cash_flows, next_business_day, yield_from_dirty
 
 OUT_DIR = paths.PROCESSED / "measures"
 MEASURES_FILE = OUT_DIR / "auction_measures.csv"
 PATHS_FILE = OUT_DIR / "m2_paths.csv.gz"
 RESIDUALS_FILE = OUT_DIR / "m1b_residuals.csv.gz"
+M3_PATHS_FILE = OUT_DIR / "m3_paths.csv.gz"
+MARKET_YIELDS_FILE = paths.INTERIM / "auctioned_gilts_market_yields.csv.gz"
+REF_DATA_WINDOW = (dt.date(1998, 11, 1), config.PRICER_TEST_WINDOW[1])   # actual/actual era .. last file
+SRC_DMO_YIELD, SRC_FROM_CLEAN = "DMO yield", "from DMO clean price"
 MODEL_YIELDS_FILE = paths.INTERIM / "auction_gilt_model_yields.csv.gz"
 
 M2_WINDOW = (-10, 10)            # spec §7
@@ -217,21 +232,66 @@ def m2(P: pd.DataFrame, cp: pd.DataFrame, Y: pd.DataFrame):
 
 
 # ============================================================================ M1b
-def load_reference_yields(isins, years) -> pd.DataFrame:
-    """DMO reference yields (own ISIN lines) for the given gilts and years."""
+def _yields_from_clean(rows):
+    """Worker: yield (%) for each (isin, date, clean, maturity, coupon, fi, fc) from the DMO clean price
+    plus our accrued interest, for settlement on the next business day."""
+    rows, = rows
+    out = []
+    for isin, d, clean, mat, cpn, fi, fc in rows:
+        settle = next_business_day(d)
+        eff = effective_settlement(settle, fi)
+        if eff >= mat:
+            out.append((isin, d, np.nan)); continue
+        acc = cash_flows(eff, mat, cpn, fi, fc)["accrued"]
+        out.append((isin, d, 100.0 * yield_from_dirty(eff, mat, cpn, clean + acc, fi, fc)))
+    return out
+
+
+def build_market_yields(P: pd.DataFrame, write: bool = True) -> pd.DataFrame:
+    """Market yields of the auctioned gilts on every reference-price day 1 Nov 1998 - 21 Jul 2017:
+    the DMO yield where published, else the yield from the DMO clean price (our pricer)."""
+    lo, hi = REF_DATA_WINDOW
+    isins = set(P["isin"])
     parts = []
-    for y in years:
+    for y in range(lo.year, hi.year + 1):
         ref = load_reference_prices(paths.ref_prices_file(y))
-        ref = ref[ref["isin"].isin(isins) & ref["yield"].notna()][["isin", "date", "yield"]]
-        parts.append(ref)
-    R = pd.concat(parts, ignore_index=True)
-    return R.drop_duplicates(["isin", "date"])
+        ref = ref[ref["isin"].isin(isins) & (ref["date"] >= lo) & (ref["date"] <= hi)]
+        parts.append(ref[["isin", "date", "clean", "yield"]])
+    R = pd.concat(parts, ignore_index=True).drop_duplicates(["isin", "date"]).rename(columns={"yield": "dmo_yield"})
+    T = P.groupby("isin").agg(maturity=("maturity", "first"), coupon=("coupon", "first"),
+                              fi=("first_issue", "first"), fc=("first_coupon", "first"))
+    need = R[R["dmo_yield"].isna() & R["clean"].notna()]
+    rows = [(i, d, float(c), T.at[i, "maturity"], T.at[i, "coupon"],
+             T.at[i, "fi"] if isinstance(T.at[i, "fi"], dt.date) else None,
+             T.at[i, "fc"] if isinstance(T.at[i, "fc"], dt.date) else None)
+            for i, d, c in zip(need["isin"], need["date"], need["clean"])]
+    n_workers = os.cpu_count() or 1
+    chunks = [rows[i::n_workers * 4] for i in range(n_workers * 4)]
+    with ProcessPoolExecutor(max_workers=n_workers) as pool:
+        got = [x for part in pool.map(_yields_from_clean, [(c,) for c in chunks]) for x in part]
+    G = pd.DataFrame(got, columns=["isin", "date", "yield_from_clean"])
+    R = R.merge(G, on=["isin", "date"], how="left")
+    R["market_yield"] = R["dmo_yield"].fillna(R["yield_from_clean"])
+    R["yield_source"] = np.where(R["dmo_yield"].notna(), SRC_DMO_YIELD,
+                                 np.where(R["yield_from_clean"].notna(), SRC_FROM_CLEAN, None))
+    R = R.dropna(subset=["market_yield"]).sort_values(["isin", "date"])
+    if write:
+        paths.INTERIM.mkdir(parents=True, exist_ok=True)
+        R.to_csv(MARKET_YIELDS_FILE, index=False, float_format="%.12g")
+    return R.reset_index(drop=True)
 
 
-def m1b(P: pd.DataFrame, cp: pd.DataFrame, Y: pd.DataFrame, M1: pd.DataFrame):
+def load_market_yields() -> pd.DataFrame:
+    R = pd.read_csv(MARKET_YIELDS_FILE, float_precision="round_trip")
+    R["date"] = [dt.date.fromisoformat(v) for v in R["date"]]
+    return R
+
+
+def m1b(P: pd.DataFrame, cp: pd.DataFrame, Y: pd.DataFrame, M1: pd.DataFrame, MY: pd.DataFrame):
     """Baseline (mean residual T-25..T-6) and M1b for every auction. Returns (summary, residuals)."""
-    lo, hi = config.PRICER_TEST_WINDOW
-    R = load_reference_yields(set(P["isin"]), range(lo.year, hi.year + 1)).set_index(["isin", "date"])["yield"]
+    lo, hi = REF_DATA_WINDOW
+    R = MY.set_index(["isin", "date"])["market_yield"]
+    SRC = MY.set_index(["isin", "date"])["yield_source"]
     ylook = Y.set_index(["isin", "curve_date"])["model_yield"]
     pos = {d: i for i, d in enumerate(cp.index.date)}
     auc_by_isin = P.groupby("isin")["auction_date"].apply(sorted).to_dict()
@@ -250,18 +310,18 @@ def m1b(P: pd.DataFrame, cp: pd.DataFrame, Y: pd.DataFrame, M1: pd.DataFrame):
             if any(abs(pos[d] - p) <= M1B_EXCLUDE_BDAYS for p in earlier):
                 reason = "within 5 business days of an earlier auction of the gilt"
             elif not (lo <= d <= hi):
-                reason = "outside the DMO reference-yield data (25 Nov 2002 - 21 Jul 2017)"
+                reason = "outside the reference-price data (1 Nov 1998 - 21 Jul 2017)"
             elif fi is not None and d < fi:
                 reason = "before the gilt's first issue"
             elif np.isnan(dmo):
-                reason = "no DMO yield for the gilt that day"
+                reason = "no DMO price for the gilt that day"
             # the residual is kept for every day with a DMO yield (for the hand check and sensitivity
             # analysis); only days with no exclusion reason enter the baseline
             res = 100.0 * (dmo - mod) if (lo <= d <= hi and not np.isnan(dmo) and not np.isnan(mod)) else np.nan
             if reason is None:
                 vals.append(res)
-            resid.append(dict(auction_id=aid, k=k, date=d, dmo_yield=dmo, model_yield=mod, residual_bp=res,
-                              excluded=reason))
+            resid.append(dict(auction_id=aid, k=k, date=d, market_yield=dmo, yield_source=SRC.get((r.isin, d)),
+                              model_yield=mod, residual_bp=res, excluded=reason))
         n = len(vals)
         base = float(np.mean(vals)) if n else np.nan
         ok = n >= M1B_MIN_DAYS
@@ -272,15 +332,45 @@ def m1b(P: pd.DataFrame, cp: pd.DataFrame, Y: pd.DataFrame, M1: pd.DataFrame):
     return pd.DataFrame(summary, index=P.index), pd.DataFrame(resid)
 
 
+# ============================================================================ M3
+def m3(P: pd.DataFrame, cp: pd.DataFrame, Y: pd.DataFrame, MY: pd.DataFrame):
+    """Bond residual path T-10..T+10 and its three numbers. Returns (summary, paths)."""
+    R = MY.set_index(["isin", "date"])
+    ylook = Y.set_index(["isin", "curve_date"])["model_yield"]
+    summary, paths_ = [], []
+    for i, r in zip(P.index, P.itertuples(index=False)):
+        aid = f"{r.auction_date}_{r.isin}"
+        days = event_days(cp.index, r.auction_date, *M2_WINDOW)
+        res = {}
+        for k, ts in zip(range(M2_WINDOW[0], M2_WINDOW[1] + 1), days):
+            d = ts.date()
+            key = (r.isin, d)
+            mk = R["market_yield"].get(key, np.nan)
+            mod = ylook.get(key, np.nan)
+            res[k] = 100.0 * (mk - mod)
+            paths_.append(dict(auction_id=aid, k=k, date=d, market_yield=mk, yield_source=R["yield_source"].get(key),
+                               model_yield=mod, residual_bp=res[k]))
+        s_ = dict(m3_days=int(np.sum(~np.isnan(list(res.values())))), m3_residual_t6_bp=res[M2_BASE])
+        for label, (a, b) in PM_NUMBERS.items():
+            s_[f"m3_{label}_bp"] = res[b] - res[a]
+        summary.append(s_)
+    Pth = pd.DataFrame(paths_)
+    base = Pth[Pth["k"] == M2_BASE].set_index("auction_id")["residual_bp"]
+    Pth["residual_rel_t6_bp"] = Pth["residual_bp"] - Pth["auction_id"].map(base)
+    return pd.DataFrame(summary, index=P.index), Pth
+
+
 # ============================================================================ build
 def build(write: bool = True, rebuild_cache: bool = False):
     """All measures. Returns (measures, m2 paths, m1b residuals)."""
     P = au.load_auction_panel()
     cp = load_panel()
     Y = build_model_yields(P, cp) if (rebuild_cache or not MODEL_YIELDS_FILE.exists()) else load_model_yields()
+    MY = build_market_yields(P) if (rebuild_cache or not MARKET_YIELDS_FILE.exists()) else load_market_yields()
     M1 = m1(P, cp)
     S2, paths_ = m2(P, cp, Y)
-    S1b, resid = m1b(P, cp, Y, M1)
+    S1b, resid = m1b(P, cp, Y, M1, MY)
+    S3, paths3 = m3(P, cp, Y, MY)
     keys = P[["auction_date", "settlement_date", "gilt_name", "isin", "bucket", "regime", "passive_qt_2022",
               "new_issue", "years_to_maturity", "years_beyond_curve", "drop_extrapolation_robustness",
               "flag_first_coupon_rule", "aay", "t_minus_1"]].copy()
@@ -288,12 +378,13 @@ def build(write: bool = True, rebuild_cache: bool = False):
     ylook = Y.set_index(["isin", "curve_date"])["model_yield"]
     M1["model_yield_t1_curve_settle"] = [ylook[(i, d)] for i, d in zip(P["isin"], P["t_minus_1"])]
     M1["m1_alt_curve_settlement_bp"] = 100.0 * (P["aay"] - M1["model_yield_t1_curve_settle"])
-    out = pd.concat([keys, M1, S1b, S2.drop(columns="auction_id")], axis=1)
+    out = pd.concat([keys, M1, S1b, S2.drop(columns="auction_id"), S3], axis=1)
     if write:
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         out.to_csv(MEASURES_FILE, index=False)
         paths_.to_csv(PATHS_FILE, index=False, float_format="%.10g")
         resid.to_csv(RESIDUALS_FILE, index=False, float_format="%.10g")
+        paths3.to_csv(M3_PATHS_FILE, index=False, float_format="%.10g")
     return out, paths_, resid
 
 
