@@ -26,6 +26,7 @@ RAW_MANIFEST = DATA / "raw_manifest.csv"          # SHA-256 of every raw file (S
 REPORTS = ROOT / "reports"
 FIGURES = REPORTS / "figures"                     # seaborn PNGs
 INTERACTIVE = REPORTS / "interactive"             # Plotly HTML
+TABLES = REPORTS / "tables"                       # report tables (CSV + HTML), e.g. the p-value appendix
 
 # ------------------------------------------------------------------ raw files (see SOURCES.md)
 CURVE_DIR = RAW / "glc_nominal"                   # #1 BoE nominal curve archive (extracted)

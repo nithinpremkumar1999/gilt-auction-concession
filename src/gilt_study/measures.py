@@ -51,6 +51,10 @@ The PM's three numbers (spec §7), as read here (listed at the gate):
   post-auction reversal (T -> T+5)   = CAR_5 - CAR_0     (the daily changes of days T+1..T+5)
   Positive = the gilt cheapened relative to the control (its yield rose more).
 
+Extra windows (Stage 6 chart gate, 21 Oct 2026; added after seeing chart 1, where M3 rises from T-8)
+  pre10 (T-10 -> T-1)   robustness pre-auction window, M2 (B-beta) and M3: CAR_-1 - CAR_-10, r_-1 - r_-10
+  total (T-10 -> T+1)   the M3 total move: r_1 - r_-10
+
 Outputs
 -------
   data/interim_data/auction_gilt_model_yields.csv.gz  model yield of every auctioned gilt on every
@@ -97,6 +101,9 @@ M1B_EXCLUDE_BDAYS = 5            # proposed default: +-5 business days around an
 M1B_MIN_DAYS = 10                # proposed default
 FIRST_K = BETA_WINDOW[0] - 1     # earliest day whose model yield is needed (-121)
 PM_NUMBERS = {"pre": (-6, -1), "day": (-1, 0), "post": (0, 5)}
+# Added at the Stage 6 chart gate (21 Oct 2026), after seeing chart 1
+M2_EXTRA_WINDOWS = {"pre10": (-10, -1)}                       # robustness pre-auction window
+M3_EXTRA_WINDOWS = {"pre10": (-10, -1), "total": (-10, 1)}    # robustness window; M3 total move
 
 
 # ============================================================================ event-time helpers
@@ -227,6 +234,8 @@ def m2(P: pd.DataFrame, cp: pd.DataFrame, Y: pd.DataFrame):
             s[f"m2_{label}_bbeta_bp"] = car[b] - car[a]
             s[f"m2_{label}_b_bp"] = car_b[b] - car_b[a]
             s[f"m2_{label}_raw_bp"] = car_raw[b] - car_raw[a]
+        for label, (a, b) in M2_EXTRA_WINDOWS.items():
+            s[f"m2_{label}_bbeta_bp"] = car[b] - car[a]
         summary.append(s)
     return pd.DataFrame(summary, index=P.index), pd.DataFrame(paths_)
 
@@ -351,7 +360,7 @@ def m3(P: pd.DataFrame, cp: pd.DataFrame, Y: pd.DataFrame, MY: pd.DataFrame):
             paths_.append(dict(auction_id=aid, k=k, date=d, market_yield=mk, yield_source=R["yield_source"].get(key),
                                model_yield=mod, residual_bp=res[k]))
         s_ = dict(m3_days=int(np.sum(~np.isnan(list(res.values())))), m3_residual_t6_bp=res[M2_BASE])
-        for label, (a, b) in PM_NUMBERS.items():
+        for label, (a, b) in {**PM_NUMBERS, **M3_EXTRA_WINDOWS}.items():
             s_[f"m3_{label}_bp"] = res[b] - res[a]
         summary.append(s_)
     Pth = pd.DataFrame(paths_)

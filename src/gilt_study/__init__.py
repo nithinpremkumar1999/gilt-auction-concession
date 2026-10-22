@@ -11,6 +11,7 @@ Modules
   inference  OLS with week-clustered and calendar-time Newey-West standard errors (Stage 5)
   analysis   the Stage 5 dataset, headline means, regressions (spec §8) and robustness tables
   placebo    the placebo test: M2/M3 on random non-auction dates of the same gilt (Stage 5)
+  report_charts  the report's four charts, seaborn PNG + Plotly HTML (Stage 6)
   inventory  SHA-256 manifest of data/raw_data and its check (Stage 0)
   plotting   one chart, two outputs: seaborn PNG + Plotly HTML (decision #9)
   paths      every file location;  config  study parameters from logged decisions

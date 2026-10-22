@@ -12,7 +12,12 @@ The method, conventions and every decision are in the **build spec** (`claude/bu
 │   ├── curve.py             BoE curve panel (1998-2026), Curve (spline, flat-forward extrapolation), curve pricer
 │   ├── gilt_terms.py        first issue and first coupon dates per gilt (P3, P4), WI tranche dates (P2)
 │   ├── auctions.py          the auction panel (Stage 3): D2.1A + D2.1E + terms + curve, panel checks
-│   ├── measures.py          M1, M1b, M2 (control B-β; B) and the PM's three numbers (Stage 4)
+│   ├── measures.py          M1, M1b, M2 (control B-β; B), M3 (bond residual path), the PM's three numbers
+│   ├── ois.py               BoE OIS curve panel (2016-2026) and M2 with control C, gilt − OIS (Stage 5)
+│   ├── inference.py         OLS with week-clustered and calendar-time Newey-West SEs (Stage 5)
+│   ├── analysis.py          Stage 5 dataset, headline means, regressions (spec §8), robustness tables
+│   ├── placebo.py           placebo test: M2/M3 on random non-auction dates of the same gilt (Stage 5)
+│   ├── report_charts.py     the report's four charts, PNG + HTML (Stage 6)
 │   ├── data_io.py           DMO readers; test-scope filters (single-dated, linker spellings)
 │   ├── inventory.py         SHA-256 manifest of data/raw_data and its check
 │   ├── plotting.py          one chart, two outputs: seaborn PNG + Plotly HTML (decision #9)
@@ -20,17 +25,20 @@ The method, conventions and every decision are in the **build spec** (`claude/bu
 │   ├── config.py            study parameters from logged decisions (sample start 1 Nov 1998, #7)
 │   └── exercises/           validation scripts: exercise_a (Stage 1), exercise_b + curve_checks (Stage 2),
 │                            handcheck_stage4 (Stage 4 hand-check workbook)
-├── notebooks/               00 inventory · 01 pricer · 02 curve · 03 auction panel · 04 measures (the why, before code)
+├── notebooks/               00 inventory · 01 pricer · 02 curve · 03 auction panel · 04 measures · 05 inference
+│                            · 06 report charts
+│                            (the why, before code)
 ├── reports/
 │   ├── figures/             static charts (seaborn), PNG
-│   └── interactive/         interactive charts (Plotly), HTML
+│   ├── interactive/         interactive charts (Plotly), HTML
+│   └── tables/              report tables: the exact p-value appendix (CSV + HTML)
 ├── data/
 │   ├── raw_data/            downloads, never edited (see SOURCES.md)
 │   ├── raw_manifest.csv     SHA-256 of every raw file
-│   ├── interim_data/        regenerable intermediate data (gilt_terms.csv)
+│   ├── interim_data/        regenerable intermediate data (gilt terms, model/market yield caches)
 │   ├── processed_data/      analysis-ready data and validation outputs
 │   └── DATA.md              log of every change to interim/processed data
-├── tests/                   pytest: Stage 0 checks, gilt terms, Stages 1-4
+├── tests/                   pytest: Stage 0 checks, gilt terms, Stages 1-5
 ├── SOURCES.md               every raw file: URL, download date, observed coverage, SHA-256, known issues
 ├── requirements.txt         pinned versions (match the project .venv)
 └── pyproject.toml           makes src/gilt_study installable
@@ -54,8 +62,13 @@ python -m gilt_study.exercises.exercise_a --as-run # the Stage 1 record as first
 python -m gilt_study.exercises.exercise_b          # Stage 2 curve acceptance test, 15 Mar 2016
 python -m gilt_study.exercises.curve_checks        # Stage 2 extrapolation checks (~2 min)
 python -m gilt_study.auctions                      # Stage 3 auction panel + panel checks (~20 s)
-python -m gilt_study.measures                      # Stage 4 M1, M1b, M2 (~4 min first time; ~1 min from the cache)
+python -m gilt_study.measures                      # M1, M1b, M2, M3 (builds the yield caches the first time; ~1 min after)
 python -m gilt_study.exercises.handcheck_stage4    # Stage 4 hand-check workbook (recalculate in Excel/LibreOffice)
+python -m gilt_study.ois                           # Stage 5 OIS panel + control C
+python -m gilt_study.analysis                      # Stage 5 headline means, regressions, robustness
+python -m gilt_study.placebo --build-yields        # Stage 5 daily model yields for the placebo (~12 min, once)
+python -m gilt_study.placebo                       # Stage 5 placebo, 1,000 draws, both designs (~5 min); run before analysis
+python -m gilt_study.report_charts                 # Stage 6 report charts (needs the analysis and placebo outputs)
 ```
 
 Notebooks import the installed package (`from gilt_study import ...`), so they work from any folder.
@@ -277,7 +290,17 @@ So flat forward is the better of the two, but long pre-2016 auctions carry a bia
 5. **Supply controls:** should syndications and tenders include linker operations? Both versions are recorded. Should QE purchases be added (data #10, not in spec §6)?
 6. Still open: the M2 control (Module 4, today), the PM's benchmark (§1), and the OIS control C start date.
 
-### Stage 4: M1, M1b, M2, spec §7 (20 Oct 2026). Gate: hand check of 5 auctions; distribution plots
+### Stage 4: M1, M1b, M2, spec §7 (20 Oct 2026). Signed off 20 Oct 2026
+
+**Sign-off** (spec v0.5, decisions #16–17). Nithin reproduced M1 for the short, medium and long hand-check auctions independently.
+- Keep the strict M1b rule.
+- The three numbers as defined: pre T-6→T-1, day T-1→T, post T→T+5.
+- M1 to the auction settlement date.
+- The 2022 financial-stability purchases stay separate.
+- Post-2017 M1 levels are not concession estimates; M1 after 2017 is used only with gilt fixed effects.
+- M3 is promoted to the MVP, with yields from the DMO clean price before Nov 2002, and M1b is extended to those years (see Stage 5).
+
+The record below is as delivered at the gate.
 
 **Delivered**
 - `measures.py` (`python -m gilt_study.measures`):
@@ -323,3 +346,228 @@ So flat forward is the better of the two, but long pre-2016 auctions carry a bia
    - leaning on M2 for 2018–2026.
 4. **2022 financial-stability purchases** were also made through the APF. They are not in `qe_purchase_week`; they are recorded separately (5 auctions). Should they count?
 5. Control C (gilt − OIS, from Dec 2021) and all inference are Stage 5.
+
+### Stage 5: M3, control C, inference, regressions, placebo, robustness, spec §7–§8 (20 Oct 2026). Signed off 21 Oct 2026
+
+The record below is as delivered at the gate. The sign-off and the re-run follow it ("Stage 5 re-run").
+
+**Delivered**
+- **Market yields back to Nov 1998** (decision #17), `measures.build_market_yields()`.
+  - DMO yields where they are published.
+  - Before 25 Nov 2002, the yield from the DMO clean price plus our accrued interest, priced for next-day settlement with `pricing.py` unchanged.
+  - Where both exist, the two agree to 0.0001bp (3,000 random gilt-days).
+- **M1b** uses these market yields: **319 auctions** (from 309), back to 26 May 1999.
+- **M3** (`measures.m3`): the residual (market yield − model yield) from T-10 to T+10, with the same three numbers as residual changes.
+  - Coverage: pre 395, day 417, post 416 auctions, 1999–Jul 2017.
+  - New issues have no pre number. *(Corrected 21 Oct: 28 of the 50 new issues to Jul 2017 do have one, because the DMO reference prices carry the when-issued line by T-6.)*
+  - Output: `data/processed_data/measures/m3_paths.csv.gz`.
+- **Control C** (`ois.py`): Δ model yield − Δ OIS spot at the gilt's remaining maturity, for auctions from 1 Dec 2021 (241).
+  - Beyond the OIS curve's 25y the curve is extended flat-forward (38 auctions).
+  - The 1 May 2024 OIS curve is missing, so the previous curve is used (5 auctions affected).
+- **Inference** (`inference.py`):
+  - Main: OLS with SEs clustered by ISO week of the auction (CR1; t with G−1 df).
+  - Check: Newey-West in calendar time (Bartlett, 30 days).
+  - Both reproduce statsmodels 0.15.0 to 1e-10.
+- **Regressions** (`analysis.py`, spec §8, decision #17):
+  - M1b (1999–2017);
+  - M1 with **gilt fixed effects** (2018–2026);
+  - M2 B-β pre/day/post (all years);
+  - M3 pre/day/post;
+  - M1 pooled on the M1b sample;
+  - H4: long × post-2022 in the M1-FE and M2 regressions.
+
+  Regressors: DV01 (£m/bp, allotment excl. PAOF), bucket, cover surprise, tail (4 Mar 2009 missing), new issue, QT-sale week, QE-purchase week, syndication/tender within ±5 business days, volatility at the gilt's maturity, and regime dummies. The 2 post-QT-decision auctions are descriptive only.
+- **Placebo** (`placebo.py`): 1,000 draws (seed 20261020).
+  - Each real auction is replaced by the same gilt on a random non-auction date, in the same bucket, at least 10 business days from its own auctions.
+  - M2 and M3 are recomputed exactly. The engine reproduces the real auctions to 5e-14 (M2) and 7e-10 (M3).
+- **Robustness:**
+  - M2: drop the LDI window; drop Feb–Oct 2022; drop > 5y beyond the curve; control B (β = 1); B-β vs C on the C sample.
+  - M3: drop > 5y beyond the curve.
+  - M1b: looser exclusion rules.
+  - Regressions: DV01 incl. PAOF; volatility at 10y; conventional-only supply; the three sample drops.
+- `notebooks/05_inference.ipynb`. Charts: `stage5_three_numbers`, `stage5_m3_paths`, `stage5_regimes`, `stage5_placebo`. Tables: `data/processed_data/stage5/`, `data/processed_data/placebo/`.
+
+**Results** (bp; positive = the gilt cheapened; p clustered unless stated)
+
+| | pre T-6→T-1 | day T-1→T | post T→T+5 |
+|---|---|---|---|
+| M2 B-β, all years (912) | +0.43 (p 0.012; placebo 0.008) | +0.04 (0.63; 0.35) | −0.43 (0.006; placebo 0.074) |
+| M3, 1999–2017 (≈400) | +0.37 (< 0.001; < 0.001) | −0.32 (< 0.001; < 0.001) | −0.18 (0.010; 0.007) |
+
+- **Levels to 2017:** M1b +1.39bp (319 auctions) vs M1 +1.92bp on the same auctions. By bucket, M1b is short 2.08, medium 0.93, long 1.19. M1 for long gilts is −0.12, because long gilts sit rich to the curve; M1b removes that.
+- **By regime (M2):**
+  - pre-crisis: pre +1.13, post −0.88;
+  - QE: pre +0.59, post −0.62;
+  - active QT: pre −0.16 (n.s.), day +0.32 (p 0.047).
+  - LDI window: 3 auctions, 2 clusters, so no reliable SE.
+- **Regressions:**
+  - Cover surprise is negative in M1b (−1.54***), M2 day (−1.12***) and M3 day (−0.57***).
+  - Volatility is positive in M1b (+0.43***).
+  - QE is negative in M1b (−1.69***).
+  - In the M1 FE regression (base QE): DV01 +1.27**, QT-sale week −2.26***, LDI +9.15***, active QT +6.29***.
+  - H4: long × post-2022 is −7.96*** in M1 FE and not significant in M2.
+- **Control C vs B-β** (Dec 2021+, 241 auctions): neither is significant. They disagree on the pre number: B-β −0.16, C +0.48 (p 0.14).
+- **Robustness:** the M2 and M3 means survive every sample drop and control B. In the regressions, active QT in M1 FE falls to +4.14 (n.s.) when Feb–Oct 2022 is dropped. Looser M1b rules give 1.31 and 1.29bp.
+
+**Tests run:** `pytest`, 92 passed. New: `tests/test_stage5.py` (9 tests) covers:
+- inference vs statsmodels and the week clusters;
+- market-yield sources and M1b back to 1999;
+- M3 = residual changes;
+- the control-C sample and missing rule;
+- cover surprise from earlier auctions only;
+- the regime base;
+- the placebo engine check and its 1,000 draws.
+
+`test_measures.py` was updated for M1b = 319.
+
+**Could not resolve (needs decisions at the gate)**
+1. **Cover surprise** = bid-to-cover − the mean of the previous 5 auctions in the same bucket. Is 5 the right lookback?
+2. **Supply controls** are dummies (any syndication or tender within ±5 business days, linkers included). Use dummies or counts?
+3. **H4 "post-2022"** = auctions from 1 Nov 2022 (active QT).
+4. **Newey-West bandwidth** = 30 calendar days.
+5. **Placebo design** as above, with a two-sided p-value around the placebo mean. 15 auctions (M2) and 3 (M3) have no eligible date.
+6. **Control C** is extrapolated flat-forward beyond 25y (38 auctions).
+7. **Cover and tail are auction outcomes**, unknown during the pre window. Keep them in all specifications, or split out an "auction outcome" specification?
+8. **The LDI dummy** rests on 3 auctions in 2 weeks. Report it but do not interpret it?
+9. **M3 attenuation.** The BoE nominal curve is fitted to conventional gilts "with a significant amount in issue and having more than three months to maturity", so the auctioned gilt is one of its own fitting points. M3 (and M1) residual changes are therefore biased towards zero; M2 is not, because its control excludes ±3y around the gilt. Note this as a limitation, or test it with our own refit excluding the gilt (a new curve build)?
+10. **The placebo and clustered SEs disagree on M2 post** (0.074 vs 0.006): the placebo centre is −0.11bp, not 0. Which leads in the write-up?
+11. Still open: the PM's benchmark (§1).
+
+#### Stage 5 sign-off and re-run (21 Oct 2026; spec decisions #18–#20)
+
+**Sign-off**
+- **#18:** the proposed defaults are approved.
+  - Cover surprise vs the previous 5 auctions in the bucket (10 as robustness).
+  - H4 from 1 Nov 2022.
+  - Newey-West bandwidth 30 calendar days.
+  - The placebo design.
+  - OIS flat forward beyond 25y.
+  - Supply controls as dummies, with counts as robustness.
+- **#19:** two specifications. **Ex-ante** (variables known before bidding) for the PM's prediction; **auction-outcome** (adds cover surprise and tail) for explanation. Cover and tail never enter pre-window regressions.
+- **#20:**
+  - The LDI dummy is reported, not interpreted.
+  - M3 attenuation is recorded as a limitation, with no refit.
+  - Inference leads with the placebo-centred p-value, with clustered SEs alongside.
+
+**What changed in the code and outputs**
+- **`analysis.py`**
+  - `EX_ANTE` and `AUCTION_OUTCOME` regressor sets; `specs_for()` keeps M2 pre and M3 pre out of the auction-outcome specification.
+  - `regressions.csv` carries a `specification` column. The wide tables `regressions_ex_ante.csv` and `regressions_outcome.csv` replace `regressions_wide.csv`, which is deleted. H4 is run under both specifications.
+  - Robustness gains "supply counts (not dummies)" and "cover surprise vs previous 10". Every variant runs under both specifications.
+  - `headline.csv` gains `p_placebo`, `placebo_mean_bp`, `n_placebo`, `p_placebo_same_regime`, `lead_p`, `lead_p_source` and `note` (the LDI rows), plus M1b/M1 levels by regime.
+- **`placebo.py`**
+  - Regime groups are added, by the real auction's regime.
+  - **Each M3 window is now drawn on its own sample**, the same as its headline mean: 391/412/412 events, where Stage 5 used 391 for all three.
+    - All auctions: only the post p moves, 0.007 → 0.004.
+    - By bucket: medium post crosses 5% (0.069 → 0.021); long post 0.180 → 0.234; long pre 0.008 → 0.005.
+  - Mean placebo paths are kept for chart 1 (`placebo_paths.csv.gz`).
+  - A second design, "same regime", is added for a Stage 6 gate question.
+  - M2 results are identical to the Stage 5 run (same seed, same draw order).
+- **Notebook 05** is rebuilt.
+  - The charts `stage5_three_numbers` and `stage5_regimes` are removed; report charts 2 and 3 replace them.
+  - `stage5_m3_paths` and `stage5_placebo` are kept.
+
+**Re-run results** (bp; positive = cheapened; lead p = placebo-centred)
+
+| | pre T-6→T-1 | day T-1→T | post T→T+5 |
+|---|---|---|---|
+| M2 B-β, all years (912) | +0.43 (p 0.008) | +0.04 (0.345) | −0.43 (0.074) |
+| M3, 1999–2017 (395/417/416) | +0.37 (< 0.001) | −0.32 (< 0.001) | −0.18 (0.004) |
+
+- **Ex-ante regressions** (clustered SEs):
+  - M1b: volatility +0.46***, QE −1.80***, medium −1.65**, long −2.02**, DV01 +0.61*.
+  - M1 with gilt FE: DV01 +1.02**, long −3.53**, QT-sale week −2.19***, active QT +6.02**.
+  - M3: volatility +0.42*** pre and −0.17*** day.
+  - M2: nothing significant at 5% except the LDI dummy, which is not interpreted.
+- **Auction-outcome regressions** are the Stage 5 main table without the pre windows (same regressors).
+
+### Stage 6: report charts, spec §9 (21 Oct 2026). Chart gate held 21 Oct 2026; changes applied, stopped after re-render
+
+The record below is as delivered at the gate. The decisions and changes follow it ("Chart gate").
+
+**Delivered**
+- `report_charts.py` (`python -m gilt_study.report_charts`) and `notebooks/06_report_charts.ipynb` (data and reasoning per chart).
+- Four chart pairs, each a PNG in `reports/figures/` and an HTML in `reports/interactive/`:
+  1. `report_1_paths`: the average path T-10…T+10 for M2 (all 912 auctions) and M3 (the 367 with a complete path). Each line has a blue band for the 95% CI of the mean (clustered by week) and a grey band for the placebo 95% range (2.5–97.5 percentiles of 1,000 placebo mean paths). Dotted lines mark the three windows.
+  2. `report_2_by_bucket`: the three numbers by bucket for M2 and M3, plus the M1b level, with all auctions alongside.
+  3. `report_3_by_regime`: the same by regime (pre-crisis, QE, active QT). The LDI window is in the tables only.
+  4. `report_4_ex_ante_drivers`: ex-ante coefficients with 95% CIs, one panel per dependent variable. M2 and M3 are by window; M1b and M1 (gilt FE) are levels.
+- **Common encoding:**
+  - bars are 95% CIs from clustered SEs;
+  - **filled marker = lead p < 0.05** (placebo-centred for M2/M3 means, clustered for M1b and coefficients);
+  - one y-axis per chart;
+  - buckets use categorical slots 1–3; regimes use slots 7, 4, 5 (validator: worst CVD ΔE 16.3, normal 19.6).
+- **Checked by eye:** both versions of every chart. The PNGs were checked directly, and the Plotly HTML through screenshots rendered in Chromium.
+
+**Tests run:** `pytest`, 96 passed. `tests/test_stage5.py` gains:
+- the two specifications (no cover or tail in ex-ante or pre-window regressions, including robustness);
+- the headline leading with the placebo p;
+- the placebo per-window M3 samples, two designs and 1,000 draws;
+- the placebo paths (engine check, zero at T-6);
+- the data behind the charts.
+
+**Could not resolve (needs decisions at the gate)**
+1. **Chart 1 bands:** clustered CI plus the placebo range (as drawn), or one band only?
+2. **Chart 1 M3 sample:** the 367 auctions with a complete path (as drawn), or all available auctions at each k (a changing sample)?
+3. **Marker fill for the lead p** (as drawn), or p-values as text labels?
+4. **Placebo design for the regime rows:** decision #18 (as drawn), or dates restricted to the auction's own regime?
+   - No marker in chart 3 changes fill. The largest moves are M2 pre-crisis post 0.262 → 0.135, M3 pre-crisis post 0.320 → 0.084, and M2 active-QT day 0.030 → 0.013.
+   - Used throughout, the same-regime design would move the headline M2 post p from 0.074 to 0.014, with a placebo centre of −0.04 instead of −0.11bp. It also drops 10 more auctions, including the 3 LDI ones.
+5. **Chart 4:**
+   - raw units (as drawn) or standardised;
+   - regime dummies off the chart;
+   - M1 with gilt FE in the level row.
+6. **Ex-ante DV01** is priced at the AAY (an outcome) with the D2.1A amount. Repricing at the T-1 model yield moves it by 0.55% on average (max 6.9%; correlation 0.9998). Switch so it is strictly ex-ante?
+7. **Titles are descriptive,** because interpretation is Nithin's (decision #2). Headline-style titles can follow the write-up.
+8. Still open: the PM's benchmark (§1).
+
+#### Chart gate (21 Oct 2026): decisions and changes
+
+**Decisions**
+1. **Chart 1:** keep both bands, with captions explaining each.
+2. **Chart 1 M3 sample:** fixed at 367 auctions ✓.
+3. **Marker fill for the lead p** ✓, plus an appendix table of exact p-values.
+4. **Placebo:** decision #18 stays the main placebo. The own-regime placebo is a labelled robustness check, noted as added after seeing the results.
+5. **Chart 4 layout** ✓.
+6. **DV01** is switched to the T-1 model yield.
+7. **New windows:** T-10 → T-1 as a robustness pre-auction window for M2 and M3, and the M3 total move T-10 → T+1. Both were added after seeing chart 1, where M3 rises from T-8.
+8. **Titles:** headline titles follow Nithin's write-up.
+
+**Changes**
+- **Captions** (`report_charts.py`): every chart has one in both versions.
+  - Chart 1 explains the blue and grey bands and the dotted window lines.
+  - Charts 2–3 explain the fill, the bars and why a hollow marker can have a bar that clears zero.
+  - Chart 3's caption is computed from the data: with own-regime placebo dates, no marker changes fill.
+  - Chart 4's note says that DV01 is priced at the T-1 model yield.
+- **Appendix:** `reports/tables/appendix_p_values.csv` and `.html` (156 rows, `write_appendix()`).
+  - Columns: every charted point's estimate, 95% CI, lead p and lead test, the decision #18 placebo p, the own-regime robustness p (labelled), and the clustered and Newey-West p.
+  - Rows the charts leave out are included and marked "table only": the LDI window, M1 on the M1b sample, regime dummies, and the new windows.
+  - Placebo p-values are in steps of 0.001 ("< 0.001" when no draw is as extreme).
+- **DV01** (`analysis.dv01_per_100_t1`): priced at the T-1 model yield for the auction settlement date. The AAY version is kept as `dv01_aay`.
+  - The level changes little: 0.55% on average, 6.9% at most, correlation 0.9998.
+  - The coefficients move more, because the AAY version was mechanically tied to M1 (a higher AAY means a lower DV01):
+    - ex-ante M1b DV01: +0.61 (p 0.069) → +0.74 (0.028);
+    - M1 with gilt FE: +1.02 (0.040) → +1.46 (0.004).
+  - Other coefficients that cross 5%: the medium and long buckets in M1b (auction-outcome) and in M1 on the M1b sample.
+  - The amount is still the D2.1A amount.
+- **New windows** (`measures.M2_EXTRA_WINDOWS`, `M3_EXTRA_WINDOWS`): new columns `m2_pre10_bbeta_bp`, `m3_pre10_bp` and `m3_total_bp`. Existing measure values are unchanged except for < 1e-9 bp in M1b/M3, which are now read from the market-yield cache.
+  - Placebo: M2 pre10 reuses the main draws' dates; the M3 windows use their own random stream. Every earlier placebo number is reproduced exactly.
+  - Results (lead p = placebo):
+
+    | Window | Mean | p |
+    |---|---|---|
+    | M2 T-10 → T-1 | +0.28bp | 0.215 |
+    | M3 T-10 → T-1 | +0.60bp | < 0.001 |
+    | M3 total T-10 → T+1 | +0.16bp | 0.012 |
+
+  - By bucket, M3 T-10 → T-1 is short +1.03, medium +0.51 and long +0.32, all < 0.001. M2 T-10 → T-1 is significant only for long: +0.63, p 0.006.
+- **Own-regime placebo:** `design_note` in the placebo results; `p_placebo_same_regime` and `p_placebo_same_regime_note` on every headline row (it was on regime rows only before).
+- **Notebooks 05 and 06** are rebuilt, with the chart-gate record in notebook 06 §6.
+
+**Tests run:** `pytest`, 100 passed. New tests cover:
+- DV01 at the T-1 model yield;
+- the new windows as path differences;
+- the robustness labels;
+- the appendix covering every charted point.
+
+**Still open:** the PM's benchmark (§1). The spec's decision log needs the chart-gate decisions.

@@ -1,4 +1,5 @@
-"""Stage 4b/5: market yields, M3, extended M1b, control C, inference, placebo and the analysis dataset.
+"""Stage 4b/5/6: market yields, M3, extended M1b, control C, inference, specifications (#19), placebo
+(#18, #20), and the data behind the report charts.
 
 Run:  pytest tests/test_stage5.py   (reads the built outputs; see the README for the build commands)
 """
@@ -94,9 +95,110 @@ def test_regime_base_is_dropped_when_absent():
     assert "QE" not in regs and "LDI" in regs and "active_QT" in regs
 
 
+# ---------------------------------------------------------------- specifications (decision #19)
+def test_ex_ante_and_outcome_specifications():
+    """Cover and tail are never in the ex-ante specification nor in any pre-window regression."""
+    assert not set(an.OUTCOME_VARS) & set(an.EX_ANTE)
+    assert set(an.specs_for("auction-outcome")) == set(an.SPECS) - an.PRE_WINDOW_SPECS
+    R = pd.read_csv(an.OUT_DIR / "regressions.csv")
+    pre = R["spec"].isin(an.PRE_WINDOW_SPECS) | (R["specification"] == "ex-ante")
+    assert not R.loc[pre, "variable"].isin(an.OUTCOME_VARS).any()
+    out = R[R["specification"] == "auction-outcome"]
+    assert set(out["spec"]) == set(an.SPECS) - an.PRE_WINDOW_SPECS
+    assert out["variable"].isin(an.OUTCOME_VARS).any()
+    RR = pd.read_csv(an.OUT_DIR / "robust_regressions.csv")
+    assert not RR.loc[RR["spec"].isin(an.PRE_WINDOW_SPECS), "variable"].isin(an.OUTCOME_VARS).any()
+    assert {"supply counts (not dummies)", "cover surprise vs previous 10"} <= set(RR["variant"])
+
+
+def test_headline_leads_with_the_placebo_p():
+    """Decision #20: M2/M3 rows carry the placebo-centred p as lead_p; M1b rows the clustered p."""
+    H = pd.read_csv(an.OUT_DIR / "headline.csv")
+    m = H["set"].isin(an.MEASURE_SETS) & H["group"].isin(["all", "short", "medium", "long", "pre-crisis", "QE", "active QT"])
+    assert H.loc[m, "p_placebo"].notna().all()
+    assert np.allclose(H.loc[m, "lead_p"], H.loc[m, "p_placebo"])
+    lv = H["set"] == "Levels to 2017"
+    assert (H.loc[lv, "lead_p_source"] == "clustered").all() and np.allclose(H.loc[lv, "lead_p"], H.loc[lv, "p_cluster"])
+    assert (H.loc[H["group"] == "LDI stress", "note"] == an.LDI_NOTE).all()
+
+
 # ---------------------------------------------------------------- placebo
 def test_placebo_engine_reproduces_the_real_auctions_and_has_1000_draws():
     R = pd.read_csv(pl.OUT_DIR / "placebo_results.csv")
+    assert set(R["design"]) == set(pl.DESIGNS)
     assert (R["engine_check_max_abs"] < 1e-8).all()
     D = pd.read_csv(pl.OUT_DIR / "placebo_draws.csv.gz")
-    assert D.groupby(["measure", "group"]).size().eq(pl.N_DRAWS).all()
+    assert D.groupby(["design", "measure", "group", "window"]).size().eq(pl.N_DRAWS).all()
+    # M3: each window on its own sample (the headline's), less the auctions without a placebo date
+    M = ms.load_measures()
+    main = R[(R["design"] == "main") & (R["measure"] == "M3") & (R["group"] == "all")].set_index("window")
+    for w in pl.WINDOWS:
+        assert main.at[w, "n_events"] + main.at[w, "no_placebo_date"] == M[f"m3_{w}_bp"].notna().sum()
+
+
+def test_placebo_paths():
+    P = pd.read_csv(pl.OUT_DIR / "placebo_paths.csv.gz")
+    assert P.groupby(["measure", "k"]).size().eq(pl.N_DRAWS).all() and P["k"].nunique() == 21
+    assert (P.groupby("measure")["engine_check"].max() < 1e-8).all()
+    assert np.allclose(P.loc[P["k"] == -6, "mean_bp"], 0)
+
+
+# ---------------------------------------------------------------- report charts (Stage 6)
+def test_report_chart_data():
+    from gilt_study import report_charts as rc
+    D = rc.path_data()
+    assert np.allclose(D.loc[D["k"] == -6, ["mean", "se"]], 0)
+    assert (D.loc[D["measure"] == "M2 (B-β)", "n"] == 912).all()
+    B = rc.bucket_data()
+    H = pd.read_csv(an.OUT_DIR / "headline.csv")
+    a = B[(B["panel"] == "M2 (B-β)") & (B["group"] == "all auctions") & (B["window"] == "pre")].iloc[0]
+    h = H[(H["set"] == "M2 (B-β), all years") & (H["group"] == "all") & (H["measure"] == "pre")].iloc[0]
+    assert np.isclose(a["mean_bp"], h["mean_bp"]) and a["significant"] == (h["p_placebo"] < 0.05)
+    assert "LDI stress" not in set(rc.regime_data()["group"])
+    C = rc.coef_data()
+    assert set(C["specification"]) == {"ex-ante"} and not C["variable"].isin(an.OUTCOME_VARS).any()
+
+
+# ---------------------------------------------------------------- chart gate (21 Oct 2026)
+def test_dv01_is_priced_at_the_t1_model_yield():
+    """DV01 is known before bidding: priced at the T-1 model yield, not the AAY."""
+    A = an.dataset()
+    d = an.dv01_per_100_t1(A.iloc[:25])
+    assert np.allclose(A["dv01"].iloc[:25], d * A["nominal_auction"].iloc[:25] / 100.0)
+    assert not np.allclose(A["dv01"], A["dv01_aay"]) and np.corrcoef(A["dv01"], A["dv01_aay"])[0, 1] > 0.999
+
+
+def test_extra_windows_are_path_differences(M):
+    """pre10 = T-10 -> T-1 (M2 CAR, M3 residual); M3 total = T-10 -> T+1."""
+    car = pd.read_csv(ms.OUT_DIR / "m2_paths.csv.gz").pivot(index="auction_id", columns="k", values="car_bbeta")
+    r3 = pd.read_csv(ms.M3_PATHS_FILE).pivot(index="auction_id", columns="k", values="residual_bp")
+    m = M.set_index("auction_id")
+    assert np.allclose(m["m2_pre10_bbeta_bp"], (car[-1] - car[-10]).reindex(m.index))
+    for col, (a, b) in [("m3_pre10_bp", (-10, -1)), ("m3_total_bp", (-10, 1))]:
+        want = (r3[b] - r3[a]).reindex(m.index)
+        assert m[col].isna().equals(want.isna()) and np.allclose(m[col].dropna(), want.dropna())
+
+
+def test_robustness_rows_are_labelled():
+    R = pd.read_csv(pl.OUT_DIR / "placebo_results.csv")
+    assert {"pre10", "total"} <= set(R["window"])
+    assert (R.loc[R["window"].isin(["pre10", "total"]), "window_note"] == pl.EXTRA_NOTE).all()
+    assert (R.loc[R["design"] == "same regime", "design_note"] == pl.DESIGN_NOTES["same regime"]).all()
+    H = pd.read_csv(an.OUT_DIR / "headline.csv")
+    x = H[H["measure"].isin(["pre10", "total"])]
+    assert set(x.loc[x["set"] == "M3, 1999-2017", "measure"]) == {"pre10", "total"}
+    assert set(x.loc[x["set"] == "M2 (B-β), all years", "measure"]) == {"pre10"}
+    assert x["window_note"].str.contains("added after seeing chart 1").all() and x["p_placebo"].notna().all()
+    s = H[H["p_placebo_same_regime"].notna()]
+    assert (s["p_placebo_same_regime_note"] == an.SAME_REGIME_NOTE).all() and set(s["by"]) == {"all", "bucket", "regime"}
+
+
+def test_appendix_covers_every_charted_point():
+    from gilt_study import report_charts as rc
+    T = rc.appendix_table()
+    B, G, C = rc.bucket_data(), rc.regime_data(), rc.coef_data()
+    assert (T["chart"] == "2").sum() == len(B) and (T["chart"] == "3").sum() == len(G)
+    assert (T["chart"] == "4").sum() == len(C)
+    assert (T.loc[T["group"] == "LDI stress", "chart"] == "table only").all()
+    means = T[T["section"] == "Means"]
+    assert np.allclose(means["lead_p"], means["p_placebo"].fillna(means["p_clustered"]))
