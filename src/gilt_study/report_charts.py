@@ -25,6 +25,13 @@ bar and marker; exact p-values are in the appendix table (reports/tables/appendi
 seeing the results: the placebo with dates in the auction's own regime, the T-10 -> T-1 pre-auction
 window (M2, M3) and the M3 total move T-10 -> T+1.
 
+Titles (Stage 7, 22 Oct 2026): `main()` takes each chart's title from the report's caption, i.e. the
+first sentence of the image alt text "Chart N. <title>. ..." in reports/report_final.md
+(`report_titles()`), so chart and caption cannot drift apart; site/build.py checks the match.
+Panel names use the report's words (the curve / the gilt relative to the curve / auction discount).
+The explanatory captions under the charts are Plotly annotations named "caption", so the website
+(which shows the report's own caption instead) can drop them.
+
 Signs: every number is a yield change or level in bp; positive = the gilt cheapened.
 Colours: buckets use categorical slots 1-3 (as in Stages 3-5); regimes use slots 7, 4, 5
 (validated 21 Oct 2026 with the dataviz validator: worst CVD Delta E 16.3, normal 19.6; contrast
@@ -33,6 +40,7 @@ sit in notebook 06); "all auctions" is neutral ink; single-series charts use slo
 
 Run:  python -m gilt_study.report_charts      (needs the Stage 5 outputs: analysis + placebo)
 """
+import re
 import textwrap
 
 import matplotlib.pyplot as plt
@@ -57,9 +65,9 @@ GROUP_COLOURS = {"all auctions": INK_SECONDARY, **plotting.colour_map(BUCKETS),
 LINE_COLOUR = CATEGORICAL[0]
 WINDOW_TICKS = {"pre": "Pre-auction<br>T-6 → T-1", "day": "Auction day<br>T-1 → T", "post": "Post-auction<br>T → T+5",
                 "level": "At auction<br>(level)"}
-MEASURE_TITLES = {"M2 (B-β)": "M2: curve event study (B-β), 1999–2026",
-                  "M3": "M3: bond residual to the curve, 1999–2017",
-                  "M1b": "M1b: level at auction, 1999–2017"}
+MEASURE_TITLES = {"M2 (B-β)": "The curve at the gilt's maturity (M2), 1999–2026",
+                  "M3": "The gilt relative to the curve (M3), 1999–2017",
+                  "M1b": "Auction discount (M1b), 1999–2017"}
 SIGN_NOTE = "bp; positive = the gilt cheapened"
 FILL_NOTE = ("Filled marker: p < 0.05 on the lead test (placebo-centred for M2 and M3, clustered for M1b); hollow "
              "otherwise. Bars: 95% confidence intervals from standard errors clustered by auction week. A hollow "
@@ -177,9 +185,9 @@ def coef_data() -> pd.DataFrame:
 
 
 # =============================================================================== chart 1: paths
-def chart_paths(D: pd.DataFrame | None = None):
+def chart_paths(D: pd.DataFrame | None = None, title: str | None = None):
     D = path_data() if D is None else D
-    title = "Average path around the auction, T-10 to T+10 (bp, relative to T-6; positive = the gilt cheapened)"
+    title = title or "Average path around the auction, T-10 to T+10 (bp, relative to T-6; positive = the gilt cheapened)"
     windows = [(-6, -1, "pre"), (-1, 0, "day"), (0, 5, "post")]
     fig_s, axes = plt.subplots(1, 2, figsize=(13, 4.8), sharey=True)
     for ax, m in zip(axes, ["M2 (B-β)", "M3"]):
@@ -239,7 +247,7 @@ def chart_paths(D: pd.DataFrame | None = None):
         fig_p.add_hline(y=0, line_color=BASELINE, row=1, col=c)
         fig_p.update_xaxes(title_text="Business days relative to the auction (T = 0)", dtick=2, row=1, col=c)
     fig_p.update_yaxes(title_text=SIGN_NOTE, row=1, col=1)
-    fig_p.add_annotation(text=_caption_plotly(PATH_CAPTION, 170), xref="paper", yref="paper", x=0, y=-0.27,
+    fig_p.add_annotation(name="caption", text=_caption_plotly(PATH_CAPTION, 170), xref="paper", yref="paper", x=0, y=-0.27,
                          showarrow=False, xanchor="left", yanchor="top", align="left", font=dict(size=11, color=INK_MUTED))
     fig_p.update_layout(template=PLOTLY_TEMPLATE, height=720, title=title, hovermode="closest",
                         legend=dict(orientation="h", y=-0.16, x=0), margin=dict(b=270))
@@ -316,21 +324,21 @@ def _dot_chart(D: pd.DataFrame, groups: list, title: str, legend_title: str, cap
                                    marker=dict(color=INK_MUTED, size=10, symbol=sym, line=dict(color=INK_MUTED, width=2))),
                         row=1, col=1)
     fig_p.update_yaxes(title_text=SIGN_NOTE, row=1, col=1)
-    fig_p.add_annotation(text=_caption_plotly(caption, 160), xref="paper", yref="paper", x=0, y=-0.3, showarrow=False,
+    fig_p.add_annotation(name="caption", text=_caption_plotly(caption, 160), xref="paper", yref="paper", x=0, y=-0.3, showarrow=False,
                          xanchor="left", yanchor="top", align="left", font=dict(size=11, color=INK_MUTED))
     fig_p.update_layout(template=PLOTLY_TEMPLATE, height=560 + 16 * len(caption), title=title,
                         legend=dict(orientation="h", y=-0.17, x=0), margin=dict(b=150 + 16 * len(caption)))
     return fig_s, fig_p
 
 
-def chart_buckets(D: pd.DataFrame | None = None):
+def chart_buckets(D: pd.DataFrame | None = None, title: str | None = None):
     D = bucket_data() if D is None else D
     return _dot_chart(D, ["all auctions"] + BUCKETS,
-                      "The PM's three numbers by bucket, and the M1b level (bp, mean ± 95% CI; positive = cheapened)",
+                      title or "The PM's three numbers by bucket, and the M1b level (bp, mean ± 95% CI; positive = cheapened)",
                       "bucket")
 
 
-def chart_regimes(D: pd.DataFrame | None = None):
+def chart_regimes(D: pd.DataFrame | None = None, title: str | None = None):
     D = regime_data() if D is None else D
     pts = D[D["p_placebo_same_regime"].notna()]
     flips = int(((pts["p_placebo_same_regime"] < SIG) != pts["significant"]).sum())
@@ -338,16 +346,16 @@ def chart_regimes(D: pd.DataFrame | None = None):
             + ("no marker changes fill" if flips == 0 else f"{flips} marker(s) change fill")
             + " (p-values in the appendix table). The LDI-stress window (3 auctions) is in the appendix table only: "
               "reported, not interpreted. M3 and M1b end in Jul 2017, so they have no active-QT point.")
-    fig_s, fig_p = _dot_chart(D, REGIMES, "By regime (bp, mean ± 95% CI; positive = cheapened)", "regime", [note])
+    fig_s, fig_p = _dot_chart(D, REGIMES, title or "By regime (bp, mean ± 95% CI; positive = cheapened)", "regime", [note])
     return fig_s, fig_p
 
 
 # =============================================================================== chart 4: coefficients
-def chart_coefficients(D: pd.DataFrame | None = None):
+def chart_coefficients(D: pd.DataFrame | None = None, title: str | None = None):
     D = coef_data() if D is None else D
     labels = list(COEF_VARS.values())
     ypos = {l: i for i, l in enumerate(labels[::-1])}
-    title = "What predicts the numbers, using only what is known before bidding (ex-ante regressions; bp, coefficient ± 95% CI)"
+    title = title or "What predicts the numbers, using only what is known before bidding (ex-ante regressions; bp, coefficient ± 95% CI)"
     rng_top = (min(D[D.spec.str.startswith(("M2", "M3"))]["lo"].min(), 0) - 0.2,
                max(D[D.spec.str.startswith(("M2", "M3"))]["hi"].max(), 0) + 0.2)
     fig_s, axes = plt.subplots(3, 3, figsize=(14, 11), sharey=True)
@@ -545,11 +553,29 @@ CHARTS = {"report_1_paths": chart_paths, "report_2_by_bucket": chart_buckets,
           "report_3_by_regime": chart_regimes, "report_4_ex_ante_drivers": chart_coefficients}
 
 
+REPORT_FILE = paths.REPORTS / "report_final.md"
+CAPTION_RE = re.compile(r"^!\[Chart (\d+)\. (.+?)\]\(figures/(report_\d+_[a-z0-9_]+)\.png\)\s*$", re.M)
+
+
+def report_titles(path=REPORT_FILE) -> dict:
+    """{chart file name: title} from the report's image captions: "Chart N. <title>. <more>" -> <title>
+    (the first sentence after "Chart N."). The chart number must match the file's report_N prefix."""
+    out = {}
+    for n, alt, name in CAPTION_RE.findall(path.read_text(encoding="utf-8")):
+        if not name.startswith(f"report_{n}_"):
+            raise ValueError(f"caption 'Chart {n}' points at {name}")
+        out[name] = re.split(r"\.(?:\s|$)", alt, maxsplit=1)[0]
+    return out
+
+
 def main() -> dict:
     plotting.set_seaborn_theme()
+    titles = report_titles() if REPORT_FILE.exists() else {}
+    if REPORT_FILE.exists() and set(titles) != set(CHARTS):
+        raise ValueError(f"report captions cover {sorted(titles)}, charts are {sorted(CHARTS)}")
     out = {}
     for name, f in CHARTS.items():
-        fig_s, fig_p = f()
+        fig_s, fig_p = f(title=titles.get(name))
         out[name] = plotting.save_pair(name, fig_s, fig_p)
         plotting.close(fig_s)
     out["appendix_p_values"] = write_appendix()

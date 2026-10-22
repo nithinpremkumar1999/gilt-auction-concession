@@ -186,14 +186,14 @@ def _sheet_m1b(wb, tag, r, resid, m1_ref):
     ws = wb.create_sheet(f"{tag} M1b")
     ws["A1"] = f"{tag}: {r.gilt_name}, auction {r.auction_date:%d %b %Y} - M1b baseline, T-25 to T-6 (decision #4)"
     ws["A1"].font = Font(name=FONT, bold=True, size=12)
-    _hdr(ws, 3, ["k (business days)", "Date", "DMO reference yield (%)", "Model yield (%, curve of that day)",
+    _hdr(ws, 3, ["k (business days)", "Date", "Market yield (%): DMO yield (from the DMO clean price before 25 Nov 2002)", "Model yield (%, curve of that day)",
                  "Residual (bp) = 100·(DMO - model)", "Included (1/0)", "Excluded because"])
     R = resid[resid["auction_id"] == r.auction_id].sort_values("k")
     for j, x in enumerate(R.itertuples(index=False)):
         rr = 4 + j
         _put(ws, rr, 1, int(x.k), BLUE)
         _put(ws, rr, 2, x.date, BLUE, "dd-mmm-yyyy")
-        _put(ws, rr, 3, None if pd.isna(x.dmo_yield) else float(x.dmo_yield), BLUE, "0.000000")
+        _put(ws, rr, 3, None if pd.isna(x.market_yield) else float(x.market_yield), BLUE, "0.000000")
         _put(ws, rr, 4, None if pd.isna(x.model_yield) else float(x.model_yield), BLUE, "0.000000")
         _put(ws, rr, 5, f'=IF(F{rr}=1,100*(C{rr}-D{rr}),"")', BLACK, "0.000")
         _put(ws, rr, 6, 0 if isinstance(x.excluded, str) else 1, BLUE)
